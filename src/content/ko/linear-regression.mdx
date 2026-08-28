@@ -1,0 +1,43 @@
+# 선형 회귀: 평균 제곱 오차
+
+설계 행렬 $X \in \mathbb{R}^{n \times d}$, 매개변수 $\theta$, 정답 $y$에 대해 평균 제곱 오차를 정의합니다:
+
+$$
+J(\theta) = \frac{1}{n}\lVert X\theta-y\rVert_2^2.
+$$
+
+평균 제곱 오차의 기울기는 $\nabla J(\theta) = \frac{2}{n}X^{\top}(X\theta-y)$입니다. 단계별 유도는 다음과 같습니다:
+
+$$
+\begin{aligned}
+J(\theta)
+  &= \frac{1}{n}(X\theta-y)^\top(X\theta-y) \\
+  &= \frac{1}{n}\left(\theta^\top X^\top X\theta - 2y^\top X\theta + y^\top y\right), \\
+\frac{\partial J}{\partial \theta}
+  &= \frac{2}{n}X^\top X\theta - \frac{2}{n}X^\top y \\
+  &= \frac{2}{n}X^\top(X\theta-y).
+\end{aligned}
+$$
+
+기울기를 영으로 놓으면 정규 방정식을 얻습니다:
+
+$$
+X^\top X\hat{\theta}=X^\top y,
+\qquad
+\hat{\theta}=(X^\top X)^{-1}X^\top y.
+$$
+
+작은 행렬 예시는 다음과 같습니다:
+
+$$
+X =
+\begin{pmatrix}
+1 & x_1 \\
+1 & x_2 \\
+1 & x_3
+\end{pmatrix},
+\qquad
+\sum_{i=1}^{n}(x_i^\top\theta-y_i)^2.
+$$
+
+English check: the gradient $\nabla J(\theta)$ should coexist with Korean 한글 text without encoding or layout corruption.

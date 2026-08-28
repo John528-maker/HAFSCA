@@ -12,7 +12,7 @@ This is the input the implementation plan should read. The four research documen
 
 ## 0. Read this first
 
-One thing on this page blocks work: **§3, the central scientific question.** Everything else is either locked or is a normal open task. If you are about to write lesson prose about double descent, stop and read §3.
+One thing on this page used to block work: **§3**. That question is now **settled negatively**. Lesson prose may describe the measured variance explosion and partial recovery; it still must not promise a competitive second descent as the default.
 
 ---
 
@@ -148,28 +148,29 @@ At \(n_{\text{train}}=40\), \(d\le12\): measured \(\kappa(\mathbf X)\lesssim2\) 
 
 ---
 
-## 3. 🚫 BLOCKING OPEN ISSUE — the central scientific question is not settled
+## 3. Central scientific question — **settled negatively** (2026-08-28)
 
-> ### **Can this estimator produce an honest second descent, with `secondMin < firstMin`?**
-> ### **Unknown. Not settled. Getting worse, not better.**
+> ### **Can this estimator produce an honest second descent, with `secondMin < firstMin`, at a shippable configuration?**
+> ### **No. A geometric second descent exists; a competitive return does not, reliably.**
 
-This is the question the entire product rests on, and it is open. The evidence below is not a list of nits; each item independently undermines a claim the current code makes on screen.
+Truth-target sweeps (`nTrain = 40`, test size 460, 24 seeds) against the production solver:
 
-**(i) The newly adopted defaults reproduce the original dishonest-verdict defect in its most severe form.** At `datasetSize=50`, `noise=1.0`, `maxComplexity=320`, `analyzeDoubleDescent` returns the **strictest `"Clear Double Descent"` tier** — on a curve **peaking at \(4.88\times10^{6}\) test MSE at degree 30**, with the interpolation threshold misreported as **51** against a theoretical **39**. A verdict of "Clear Double Descent" over a five-million-fold excursion is exactly the failure the audit named, returning under new numbers.
+| σ | cap | ratio ± sd | seeds with ratio < 1 | seeds with ratio < 2 |
+| --- | ---: | --- | ---: | ---: |
+| 0.3 | 2560 | 18.83 ± 16.22 | 0/24 | 1/24 |
+| 0.5 | 2560 | 8.10 ± 8.03 | 0/24 | 1/24 |
+| 1.0 | 2560 | 2.50 ± 2.29 | 3/24 | 11/24 |
 
-**(ii) The interpolation cutoff is not noise-aware.** `INTERPOLATION_MSE_THRESHOLD` is a fixed `1e-3` on train MSE. At \(\sigma=1\), train MSE at \(p=n\) is **0.207** and never crosses `1e-3` until **degree 51**. The reported "interpolation threshold" is therefore wrong by **12 degrees**. A threshold on absolute train error cannot detect interpolation in the presence of label noise; the quantity is scale-dependent and the constant is not.
+The interpolation peak is a **genuine variance explosion**, not a solver crash (the relative ridge floors κ at ≈ 4.6×10⁸, so float64 still has meaningful digits). Partial recovery is the honest default case. **Lesson copy may describe this measured behaviour. It must not promise a second descent that beats the first minimum.**
 
-**(iii) The celebrated "threshold moved to 79 = \(n-1\)" agreement is a knife-edge crossing, not a calibration.** Train MSE is \(1.51\times10^{-3}\) at \(d=78\) and \(6.93\times10^{-4}\) at \(d=79\) — the curve grazes the arbitrary `1e-3` line between two consecutive degrees. **Genuine interpolation would give \(\sim10^{-16}\).** The ridge is damping interpolation, so that agreement confirms *the ridge helped*; it does **not** confirm the constant is right. Reading it as validation is reading a coincidence as evidence.
+The bullets below are the **historical** failure modes that opened the question (tiny test set, absolute `1e-3` cutoff, `"Clear"` on a \(10^6\) peak). They are **fixed or superseded** in the current tree: theoretical interpolation threshold, ≥160-point reliability gate, truth-target primary MSE, and a verdict taxonomy that names variance explosion and partial recovery.
 
-**(iv) The reported second-descent values may be mostly test-sampling noise.** That default's test set is **10 points** at \(\sigma=1\). Test labels carry noise, so **expected test MSE cannot fall below \(\sigma^2 = 1\)**. Yet values of **0.38** and **0.33** were reported. Those are finite-sample flukes, not signal — which means the observed second-descent *ratio* may be largely an artifact of a tiny noisy test set rather than a property of the estimator.
+### What this still forbids
 
-### What this forbids, explicitly
+- **No lesson may promise a second descent that beats the first minimum.**
+- L14 copy must describe the measured peak and partial recovery, and may show the dual metric (truth vs noisy labels) as a lesson in what test error measures.
 
-- **No lesson prose about double descent may be authored.**
-- **No lesson may promise a second descent.**
-- The `double-descent` lesson's experiment stage, if it exists at all before this is settled, stays strictly descriptive: it reports what the run shows and claims nothing.
-
-A separate engineering investigation is in flight on exactly this question. Nothing in the four research documents licenses writing L14 copy before it lands.
+Honest L14 prose is now allowed. Competitive / true-DD copy is allowed only as “reachable in some seeds / controls,” not as the default claim.
 
 ---
 
@@ -241,4 +242,4 @@ Accounts and server persistence; quiz gating; a probability/MLE track; classific
 - **Research C** — §3 (gradient descent) is shippable verbatim. §4 (overfitting) is safe **only** with the plateau copy rule, seed-fragility handling, and the cap enforced in code. §4.3/§11.2 (the λ slider) is **blocked** on the absolute-vs-relative decision. §7 (bias–variance) is safe under its cap with the \(M-1\) divisor and one of the two bias remedies.
 - **Research D** — safe for structure, routing, content model and migration. The MDX/Turbopack risks are resolved. The experiment-reuse plan for nodes 4/11/12 is corrected and must not revert. Node 14 is gated on §3.
 
-**Nothing that touches double descent is safe to write until §3 is settled.**
+**Nothing that claims a default true double descent is safe to write.** Honest L14 copy about the variance peak and partial recovery is allowed.

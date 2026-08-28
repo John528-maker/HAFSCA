@@ -1,0 +1,43 @@
+# Linear Regression: Mean Squared Error
+
+For a design matrix $X \in \mathbb{R}^{n \times d}$, parameters $\theta$, and targets $y$, define the mean squared error:
+
+$$
+J(\theta) = \frac{1}{n}\lVert X\theta-y\rVert_2^2.
+$$
+
+The gradient of mean squared error is $\nabla J(\theta) = \frac{2}{n}X^{\top}(X\theta-y)$. Step by step:
+
+$$
+\begin{aligned}
+J(\theta)
+  &= \frac{1}{n}(X\theta-y)^\top(X\theta-y) \\
+  &= \frac{1}{n}\left(\theta^\top X^\top X\theta - 2y^\top X\theta + y^\top y\right), \\
+\frac{\partial J}{\partial \theta}
+  &= \frac{2}{n}X^\top X\theta - \frac{2}{n}X^\top y \\
+  &= \frac{2}{n}X^\top(X\theta-y).
+\end{aligned}
+$$
+
+Setting the gradient to zero gives the normal equations:
+
+$$
+X^\top X\hat{\theta}=X^\top y,
+\qquad
+\hat{\theta}=(X^\top X)^{-1}X^\top y.
+$$
+
+A small matrix example is
+
+$$
+X =
+\begin{pmatrix}
+1 & x_1 \\
+1 & x_2 \\
+1 & x_3
+\end{pmatrix},
+\qquad
+\sum_{i=1}^{n}(x_i^\top\theta-y_i)^2.
+$$
+
+한국어 확인: 평균 제곱 오차의 기울기 $\nabla J(\theta)$는 예측값과 정답의 차이를 줄이는 방향을 알려 줍니다. 위의 수식과 한글 문장이 같은 문단에서 올바르게 표시되어야 합니다.
