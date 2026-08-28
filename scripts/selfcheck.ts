@@ -8,6 +8,7 @@ import { vectorNorm } from "../src/lib/linalg.ts";
 import { meanSquaredError } from "../src/lib/metrics.ts";
 import { fitPolynomial, predict } from "../src/lib/regression.ts";
 import { analyzeDoubleDescent, findInterpolationThreshold } from "../src/lib/analysis.ts";
+import { defaultConfig, runExperiment } from "../src/lib/experiment.ts";
 import type { ModelResult } from "../src/types/experiment.ts";
 
 let passed = 0;
@@ -116,7 +117,8 @@ console.log("7. analyzeDoubleDescent shape detection");
     let test: number;
     if (d < 10) test = 1.0 - d * 0.05; // descend to ~0.5
     else if (d < 20) test = 0.5 + (d - 10) * 0.15; // rise to ~2.0
-    else test = 2.0 - (d - 20) * 0.08; // descend again to ~0.4
+    else if (d < 33) test = 2.0 - (d - 20) * 0.13; // second descent to ~0.4
+    else test = 0.44 + (d - 32) * 0.03; // turn upward after an interior minimum
     return {
       degree: d,
       paramCount: d + 1,
@@ -144,9 +146,30 @@ console.log("7. analyzeDoubleDescent shape detection");
     analyzeDoubleDescent(flat) === "No Clear Double Descent",
     "flat curve → No Clear Double Descent",
   );
+
+  const truncated: ModelResult[] = degrees.map((d) => {
+    const testMSE =
+      d < 10
+        ? 1 - d * 0.05
+        : d < 20
+          ? 0.5 + (d - 10) * 0.15
+          : 2 - (d - 20) * 0.06;
+    return {
+      degree: d,
+      paramCount: d + 1,
+      trainMSE: Math.max(1e-6, 0.5 - d * 0.02),
+      testMSE,
+      generalizationGap: 0,
+      coefficients: [],
+    };
+  });
+  assert(
+    analyzeDoubleDescent(truncated) === "Sweep Range Exhausted",
+    "descending sweep endpoint → Sweep Range Exhausted",
+  );
 }
 
-console.log("8. High-degree divergence is not double descent");
+console.log("8. Truncated high-degree run is not double descent");
 {
   const data = buildDataset(100, 0.2, 0.8, 42);
   const trainX = data.train.map((p) => p.x);
@@ -168,10 +191,60 @@ console.log("8. High-degree divergence is not double descent");
     };
   });
   const verdict = analyzeDoubleDescent(highDegreeRun);
-  assert(verdict === "Numerical Divergence", `unstable high-degree run → divergence (got ${verdict})`);
+  assert(
+    verdict === "Sweep Range Exhausted",
+    `still-falling high-degree run → range exhausted (got ${verdict})`,
+  );
   assert(
     verdict !== "Clear Double Descent" && verdict !== "Possible Double Descent",
-    "divergent run is not classified as double descent",
+    "truncated run is not classified as double descent",
+  );
+}
+
+console.log("9. Numerical divergence is not double descent");
+{
+  const divergent: ModelResult[] = Array.from({ length: 40 }, (_, index) => {
+    const degree = index + 1;
+    const testMSE =
+      degree < 10
+        ? 1 - degree * 0.05
+        : degree < 20
+          ? 0.5 + (degree - 10) * 100
+          : degree < 31
+            ? 1000 - (degree - 20) * 80
+            : 200 + (degree - 30) * 10;
+    return {
+      degree,
+      paramCount: degree + 1,
+      trainMSE: 1e-6,
+      testMSE,
+      generalizationGap: testMSE,
+      coefficients: [],
+    };
+  });
+  assert(
+    analyzeDoubleDescent(divergent) === "Numerical Divergence",
+    "noncompetitive interior recovery → Numerical Divergence",
+  );
+}
+
+console.log("10. Reproducible production double descent");
+{
+  const result = await runExperiment(defaultConfig());
+  const nTrain = result.dataset.train.length;
+  const first = result.results
+    .filter((model) => model.degree < nTrain)
+    .reduce((best, model) => (model.testMSE < best.testMSE ? model : best));
+  const postPeak = result.results
+    .filter((model) => model.degree > 2 * nTrain)
+    .reduce((best, model) => (model.testMSE < best.testMSE ? model : best));
+  assert(
+    result.summary.doubleDescentStatus === "Clear Double Descent",
+    `default run → Clear Double Descent (got ${result.summary.doubleDescentStatus})`,
+  );
+  assert(
+    postPeak.testMSE <= 2 * first.testMSE,
+    `post-peak error is competitive (${postPeak.testMSE} vs ${first.testMSE})`,
   );
 }
 

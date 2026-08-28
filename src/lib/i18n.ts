@@ -61,6 +61,8 @@ const en = {
     doubleDescent: "Double Descent Evidence",
     beyondSweep:
       "The expected interpolation threshold (near train-set size) is beyond this sweep's max complexity. Try a smaller dataset size to observe the threshold and potential double descent.",
+    sweepRangeExhausted:
+      "Test error was still falling at the end of the sweep. Extend the complexity range before drawing a conclusion.",
   },
   errorChart: {
     title: "Model Complexity vs Error",
@@ -110,6 +112,8 @@ const en = {
       "After a rise in test error, a later decrease is visible. This may indicate double descent, but the pattern is not strong enough to call it conclusive for this run.",
     numericalDivergence:
       "Test error increased by orders of magnitude and did not recover to a competitive level. This run shows numerical divergence, not double descent; treat the affected high-degree fits as unstable.",
+    sweepRangeExhausted:
+      "The sweep ended while test error was still falling, so the endpoint is not a second minimum. Extend the complexity range before deciding whether double descent occurred.",
     noDoubleDescent:
       "No clear second descent in test error was observed after the classical U-shaped region (or the interpolation peak). Double descent is not claimed for this run.",
   },
@@ -144,6 +148,7 @@ const en = {
     "Clear Double Descent": "Clear Double Descent",
     "Possible Double Descent": "Possible Double Descent",
     "No Clear Double Descent": "No Clear Double Descent",
+    "Sweep Range Exhausted": "Sweep Range Exhausted",
     "Numerical Divergence": "Numerical Divergence",
   } satisfies Record<DoubleDescentVerdict, string>,
 } as const;
@@ -205,6 +210,8 @@ const ko = {
     doubleDescent: "Double Descent 근거",
     beyondSweep:
       "예상 보간 임계값(학습 집합 크기 근처)이 이번 스윕의 최대 복잡도를 넘습니다. 임계값과 잠재적 double descent를 보려면 더 작은 데이터셋을 사용해 보세요.",
+    sweepRangeExhausted:
+      "스윕이 끝날 때에도 테스트 오차가 계속 감소했습니다. 결론을 내리기 전에 복잡도 범위를 더 확장하세요.",
   },
   errorChart: {
     title: "모델 복잡도 vs 오차",
@@ -254,6 +261,8 @@ const ko = {
       "테스트 오차 상승 이후 다시 감소하는 패턴이 보입니다. double descent를 시사할 수 있으나, 이번 실행만으로는 확정하기 어렵습니다.",
     numericalDivergence:
       "테스트 오차가 여러 자릿수 규모로 증가한 뒤 경쟁력 있는 수준으로 회복되지 않았습니다. 이번 실행은 double descent가 아니라 수치적 발산을 보이며, 해당 고차수 적합은 불안정한 것으로 해석해야 합니다.",
+    sweepRangeExhausted:
+      "테스트 오차가 계속 감소하는 도중 스윕이 끝났으므로, 끝점은 두 번째 최솟값이 아닙니다. Double descent 발생 여부를 판단하기 전에 복잡도 범위를 더 확장하세요.",
     noDoubleDescent:
       "고전적인 U자형 구간(또는 보간 피크) 이후 테스트 오차의 뚜렷한 두 번째 하강은 관찰되지 않았습니다. 이번 실행에서는 double descent를 주장하지 않습니다.",
   },
@@ -288,6 +297,7 @@ const ko = {
     "Clear Double Descent": "뚜렷한 Double Descent",
     "Possible Double Descent": "가능한 Double Descent",
     "No Clear Double Descent": "뚜렷하지 않은 Double Descent",
+    "Sweep Range Exhausted": "스윕 범위 부족",
     "Numerical Divergence": "수치적 발산",
   } satisfies Record<DoubleDescentVerdict, string>,
 } as const;
@@ -343,6 +353,7 @@ export type Messages = {
     minTest: string;
     doubleDescent: string;
     beyondSweep: string;
+    sweepRangeExhausted: string;
   };
   errorChart: {
     title: string;
@@ -383,6 +394,7 @@ export type Messages = {
     clearDoubleDescent: string;
     possibleDoubleDescent: string;
     numericalDivergence: string;
+    sweepRangeExhausted: string;
     noDoubleDescent: string;
   };
   history: {

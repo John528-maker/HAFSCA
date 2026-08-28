@@ -133,6 +133,17 @@ export function analyzeDoubleDescent(results: ModelResult[]): DoubleDescentVerdi
   const isCompetitive =
     secondMinRatio <= DD_THRESHOLDS.COMPETITIVE_SECOND_MIN;
 
+  let lowestPostPeakIndex = peak.index + 1;
+  for (let i = peak.index + 1; i < smoothed.length; i++) {
+    if (smoothed[i]! < smoothed[lowestPostPeakIndex]!) lowestPostPeakIndex = i;
+  }
+  if (
+    lowestPostPeakIndex === smoothed.length - 1 &&
+    smoothed[lowestPostPeakIndex]! < smoothed[lowestPostPeakIndex - 1]!
+  ) {
+    return "Sweep Range Exhausted";
+  }
+
   if (rise >= DD_THRESHOLDS.DIVERGENCE_RISE && !isCompetitive) {
     return "Numerical Divergence";
   }
@@ -211,6 +222,8 @@ export function buildAnalysisNotes(
     notes.push(a.possibleDoubleDescent);
   } else if (verdict === "Numerical Divergence") {
     notes.push(a.numericalDivergence);
+  } else if (verdict === "Sweep Range Exhausted") {
+    notes.push(a.sweepRangeExhausted);
   } else {
     notes.push(a.noDoubleDescent);
   }

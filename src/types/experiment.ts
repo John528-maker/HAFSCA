@@ -2,6 +2,7 @@ export type DoubleDescentVerdict =
   | "Clear Double Descent"
   | "Possible Double Descent"
   | "No Clear Double Descent"
+  | "Sweep Range Exhausted"
   | "Numerical Divergence";
 
 export interface ExperimentConfig {

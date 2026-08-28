@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useLanguage } from "@/components/LanguageProvider";
 import type { ExperimentConfig } from "@/types/experiment";
 import {
+  defaultMaxComplexity,
   EXPERIMENT_CONFIG,
   sliderMaxComplexity,
 } from "@/lib/experiment";
@@ -34,10 +35,7 @@ export default function ExperimentSettings({
     const next = { ...config, ...partial };
     if (partial.datasetSize !== undefined) {
       const nt = Math.floor(partial.datasetSize * next.trainRatio);
-      next.maxComplexity = Math.min(
-        2 * nt,
-        EXPERIMENT_CONFIG.MAX_COMPLEXITY_HARD_CAP,
-      );
+      next.maxComplexity = defaultMaxComplexity(nt);
     }
     onChange(next);
   }

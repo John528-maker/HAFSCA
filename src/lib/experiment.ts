@@ -16,12 +16,12 @@ import { fitPolynomial, predict } from "./regression.ts";
 /** Tunable experiment constants — change here, not scattered through UI. */
 export const EXPERIMENT_CONFIG = {
   INTERPOLATION_MSE_THRESHOLD: 1e-3,
-  DEFAULT_DATASET_SIZE: 100,
-  DEFAULT_NOISE: 0.2,
+  DEFAULT_DATASET_SIZE: 50,
+  DEFAULT_NOISE: 1,
   DEFAULT_SEED: 42,
   DEFAULT_TRAIN_RATIO: 0.8,
   DATASET_SIZE_OPTIONS: [20, 50, 100, 200, 500] as const,
-  MAX_COMPLEXITY_HARD_CAP: 200,
+  MAX_COMPLEXITY_HARD_CAP: 320,
   /** Target number of degree evaluations before we start striding. */
   TARGET_GRID_POINTS: 100,
   /** Half-width of the dense window around the interpolation threshold. */
@@ -41,12 +41,12 @@ export function defaultConfig(): ExperimentConfig {
 }
 
 export function defaultMaxComplexity(nTrain: number): number {
-  return Math.min(2 * nTrain, EXPERIMENT_CONFIG.MAX_COMPLEXITY_HARD_CAP);
+  return Math.min(8 * nTrain, EXPERIMENT_CONFIG.MAX_COMPLEXITY_HARD_CAP);
 }
 
 export function sliderMaxComplexity(nTrain: number): number {
   return Math.min(
-    2 * nTrain + 20,
+    8 * nTrain + 20,
     EXPERIMENT_CONFIG.MAX_COMPLEXITY_HARD_CAP,
   );
 }
