@@ -27,6 +27,7 @@ export default function ExperimentSettings({
   const { t } = useLanguage();
   const e = t.experiment;
   const nTrain = Math.floor(config.datasetSize * config.trainRatio);
+  const minTrainRatio = Math.min(0.8, 10 / config.datasetSize);
   const maxSlider = sliderMaxComplexity(nTrain);
   const thresholdDeg = nTrain - 1;
   const beyondCap = thresholdDeg > EXPERIMENT_CONFIG.MAX_COMPLEXITY_HARD_CAP;
@@ -34,7 +35,10 @@ export default function ExperimentSettings({
   function patch(partial: Partial<ExperimentConfig>) {
     const next = { ...config, ...partial };
     if (partial.datasetSize !== undefined) {
-      const nt = Math.floor(partial.datasetSize * next.trainRatio);
+      next.trainRatio = Math.max(next.trainRatio, 10 / partial.datasetSize);
+    }
+    if (partial.datasetSize !== undefined || partial.trainRatio !== undefined) {
+      const nt = Math.floor(next.datasetSize * next.trainRatio);
       next.maxComplexity = defaultMaxComplexity(nt);
     }
     onChange(next);
@@ -104,13 +108,18 @@ export default function ExperimentSettings({
         <Field label={e.trainTestSplit} htmlFor="split">
           <input
             id="split"
-            type="text"
-            readOnly
-            value={`${Math.round(config.trainRatio * 100)} / ${Math.round((1 - config.trainRatio) * 100)}`}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-muted"
+            type="range"
+            min={minTrainRatio}
+            max={0.8}
+            step={0.01}
+            value={config.trainRatio}
+            disabled={running}
+            onChange={(ev) => patch({ trainRatio: Number(ev.target.value) })}
+            className="w-full accent-accent"
             aria-describedby="split-help"
           />
           <p id="split-help" className="mt-1 text-xs text-muted">
+            {`${Math.round(config.trainRatio * 100)} / ${Math.round((1 - config.trainRatio) * 100)} · `}
             {e.splitHelp}
           </p>
         </Field>

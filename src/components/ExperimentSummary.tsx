@@ -60,6 +60,11 @@ export default function ExperimentSummary({ summary }: Props) {
       {summary.doubleDescentStatus === "Sweep Range Exhausted" && (
         <p className="mt-3 text-xs text-threshold">{s.sweepRangeExhausted}</p>
       )}
+      {!summary.testEstimateReliable && (
+        <p className="mt-3 text-xs text-threshold">
+          {s.testEstimateWarning}
+        </p>
+      )}
     </div>
   );
 }

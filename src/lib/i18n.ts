@@ -17,15 +17,15 @@ const en = {
     cta: "Start Experiment",
   },
   experiment: {
-    title: "Double Descent Experiment",
+    title: "Double Descent Stress Test",
     description:
-      "Change the settings, run the experiment, and watch how training and test error change as model complexity grows — including past the interpolation threshold.",
+      "Test whether error really recovers after the interpolation peak. The experiment reports divergence or an exhausted sweep instead of claiming double descent when the return is not competitive.",
     settings: "Experiment Settings",
     datasetSize: "Dataset Size",
     noiseLevel: "Noise Level",
     maxComplexity: "Max Model Complexity",
     trainTestSplit: "Train / Test Split",
-    splitHelp: "Fixed at 80 / 20 for this MVP.",
+    splitHelp: "Adjust the split; at least 10 points are kept for training.",
     randomSeed: "Random Seed",
     run: "Run Experiment",
     running: "Running…",
@@ -63,6 +63,8 @@ const en = {
       "The expected interpolation threshold (near train-set size) is beyond this sweep's max complexity. Try a smaller dataset size to observe the threshold and potential double descent.",
     sweepRangeExhausted:
       "Test error was still falling at the end of the sweep. Extend the complexity range before drawing a conclusion.",
+    testEstimateWarning:
+      "This verdict is low-confidence because the test set has fewer than 160 points. Small test sets produced unstable verdicts in calibration.",
   },
   errorChart: {
     title: "Model Complexity vs Error",
@@ -101,9 +103,9 @@ const en = {
     testDecreases:
       "As model complexity increases from the simplest models, test error decreases. The model is gaining enough flexibility to fit the underlying pattern.",
     threshold: (degree: number, mse?: string) =>
-      `Training error first drops below the interpolation threshold near degree ${degree}` +
+      `The theoretical interpolation threshold p = n is degree ${degree}` +
       (mse ? ` (train MSE ≈ ${mse})` : "") +
-      ". Around this complexity the model can nearly interpolate the training set.",
+      ". The displayed training error shows how closely the regularized fit interpolates.",
     peakNearThreshold: (degree: number) =>
       `Near the interpolation threshold, training error is very low while test error rises (peak near degree ${degree}). This matches the expected behaviour around the interpolation threshold.`,
     clearDoubleDescent:
@@ -166,15 +168,15 @@ const ko = {
     cta: "실험 시작하기",
   },
   experiment: {
-    title: "Double Descent 실험",
+    title: "Double Descent 검증 실험",
     description:
-      "설정을 바꾸고 실험을 실행한 뒤, 모델 복잡도가 증가할 때 학습·테스트 오차가 어떻게 변하는지 관찰하세요 — 보간 임계값 이후까지 포함합니다.",
+      "보간 피크 이후 오차가 실제로 회복되는지 검증하세요. 경쟁력 있는 수준으로 돌아오지 않으면 double descent라고 주장하지 않고 수치적 발산 또는 스윕 범위 부족으로 보고합니다.",
     settings: "실험 설정",
     datasetSize: "데이터셋 크기",
     noiseLevel: "노이즈 수준",
     maxComplexity: "최대 모델 복잡도",
     trainTestSplit: "학습 / 테스트 분할",
-    splitHelp: "이 MVP에서는 80 / 20으로 고정됩니다.",
+    splitHelp: "분할을 조정할 수 있으며, 학습용 데이터는 최소 10개로 유지됩니다.",
     randomSeed: "랜덤 시드",
     run: "실험 실행",
     running: "실행 중…",
@@ -212,6 +214,8 @@ const ko = {
       "예상 보간 임계값(학습 집합 크기 근처)이 이번 스윕의 최대 복잡도를 넘습니다. 임계값과 잠재적 double descent를 보려면 더 작은 데이터셋을 사용해 보세요.",
     sweepRangeExhausted:
       "스윕이 끝날 때에도 테스트 오차가 계속 감소했습니다. 결론을 내리기 전에 복잡도 범위를 더 확장하세요.",
+    testEstimateWarning:
+      "테스트 집합이 160개 미만이므로 이 판정의 신뢰도가 낮습니다. 보정 실험에서 작은 테스트 집합은 불안정한 판정을 만들었습니다.",
   },
   errorChart: {
     title: "모델 복잡도 vs 오차",
@@ -250,9 +254,9 @@ const ko = {
     testDecreases:
       "가장 단순한 모델에서 복잡도가 증가하면 테스트 오차가 감소합니다. 모델이 기저 패턴을 맞출 만큼 유연해지고 있습니다.",
     threshold: (degree: number, mse?: string) =>
-      `학습 오차가 보간 임계값 아래로 처음 떨어지는 지점은 차수 ${degree} 근처입니다` +
+      `이론적 보간 임계값 p = n은 차수 ${degree}입니다` +
       (mse ? ` (학습 MSE ≈ ${mse})` : "") +
-      ". 이 복잡도에서 모델은 학습 집합을 거의 완벽히 맞출 수 있습니다.",
+      ". 표시된 학습 오차는 정규화된 적합이 학습 데이터를 얼마나 가깝게 보간하는지 보여 줍니다.",
     peakNearThreshold: (degree: number) =>
       `보간 임계값 근처에서 학습 오차는 매우 낮지만 테스트 오차는 상승합니다(피크: 차수 ${degree} 근처). 이는 보간 임계값 주변에서 기대되는 동작과 일치합니다.`,
     clearDoubleDescent:
@@ -354,6 +358,7 @@ export type Messages = {
     doubleDescent: string;
     beyondSweep: string;
     sweepRangeExhausted: string;
+    testEstimateWarning: string;
   };
   errorChart: {
     title: string;

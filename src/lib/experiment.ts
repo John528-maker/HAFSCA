@@ -7,7 +7,7 @@ import type {
 import {
   analyzeDoubleDescent,
   buildAnalysisNotes,
-  findInterpolationThreshold,
+  DD_THRESHOLDS,
 } from "./analysis.ts";
 import { buildDataset } from "./dataset.ts";
 import { generalizationGap, meanSquaredError } from "./metrics.ts";
@@ -15,15 +15,14 @@ import { fitPolynomial, predict } from "./regression.ts";
 
 /** Tunable experiment constants — change here, not scattered through UI. */
 export const EXPERIMENT_CONFIG = {
-  INTERPOLATION_MSE_THRESHOLD: 1e-3,
-  DEFAULT_DATASET_SIZE: 50,
-  DEFAULT_NOISE: 1,
-  DEFAULT_SEED: 42,
-  DEFAULT_TRAIN_RATIO: 0.8,
+  DEFAULT_DATASET_SIZE: 500,
+  DEFAULT_NOISE: 0.3,
+  DEFAULT_SEED: 1,
+  DEFAULT_TRAIN_RATIO: 0.08,
   DATASET_SIZE_OPTIONS: [20, 50, 100, 200, 500] as const,
-  MAX_COMPLEXITY_HARD_CAP: 320,
+  MAX_COMPLEXITY_HARD_CAP: 1280,
   /** Target number of degree evaluations before we start striding. */
-  TARGET_GRID_POINTS: 100,
+  TARGET_GRID_POINTS: 120,
   /** Half-width of the dense window around the interpolation threshold. */
   DENSE_WINDOW: 15,
 } as const;
@@ -41,24 +40,24 @@ export function defaultConfig(): ExperimentConfig {
 }
 
 export function defaultMaxComplexity(nTrain: number): number {
-  return Math.min(8 * nTrain, EXPERIMENT_CONFIG.MAX_COMPLEXITY_HARD_CAP);
+  return Math.min(32 * nTrain, EXPERIMENT_CONFIG.MAX_COMPLEXITY_HARD_CAP);
 }
 
 export function sliderMaxComplexity(nTrain: number): number {
   return Math.min(
-    8 * nTrain + 20,
+    32 * nTrain + 20,
     EXPERIMENT_CONFIG.MAX_COMPLEXITY_HARD_CAP,
   );
 }
 
 /**
- * Degree grid that is dense around the interpolation threshold (degree = nTrain - 1)
- * and may stride elsewhere so large sweeps stay interactive.
+ * Degree grid that is dense through the interpolation threshold (degree =
+ * nTrain - 1) and may stride afterward. Keeping the full low-degree region is
+ * necessary to measure the first minimum used in the DD ratio faithfully.
  */
 export function degreeGrid(nTrain: number, maxComplexity: number): number[] {
   const maxDeg = Math.max(1, Math.min(maxComplexity, EXPERIMENT_CONFIG.MAX_COMPLEXITY_HARD_CAP));
   const thresholdDeg = nTrain - 1;
-  const denseLo = Math.max(1, thresholdDeg - EXPERIMENT_CONFIG.DENSE_WINDOW);
   const denseHi = Math.min(maxDeg, thresholdDeg + EXPERIMENT_CONFIG.DENSE_WINDOW);
 
   if (maxDeg <= EXPERIMENT_CONFIG.TARGET_GRID_POINTS) {
@@ -69,7 +68,7 @@ export function degreeGrid(nTrain: number, maxComplexity: number): number[] {
   const set = new Set<number>();
   for (let d = 1; d <= maxDeg; d += stride) set.add(d);
   set.add(maxDeg);
-  for (let d = denseLo; d <= denseHi; d++) set.add(d);
+  for (let d = 1; d <= denseHi; d++) set.add(d);
   return Array.from(set).sort((a, b) => a - b);
 }
 
@@ -147,11 +146,21 @@ export async function runExperiment(
     currentDegree: degrees[degrees.length - 1]!,
   });
 
-  const interpolationThreshold = findInterpolationThreshold(
+  const thresholdDegIdeal = nTrain - 1;
+  const thresholdBeyondSweep = thresholdDegIdeal > config.maxComplexity;
+  /*
+   * Interpolation is a parameter-count fact: p=n at degree nTrain-1. The
+   * relative ridge deliberately leaves train MSE around 1e-4–1e-3 there, so
+   * an empirical MSE crossing moves with noise and conditioning. Report the
+   * known theoretical threshold; train MSE remains visible as corroboration.
+   */
+  const interpolationThreshold = thresholdBeyondSweep ? null : thresholdDegIdeal;
+  const testSize = dataset.test.length;
+  const doubleDescentStatus = analyzeDoubleDescent(
     results,
-    EXPERIMENT_CONFIG.INTERPOLATION_MSE_THRESHOLD,
+    testSize,
+    thresholdDegIdeal,
   );
-  const doubleDescentStatus = analyzeDoubleDescent(results);
   const analysisNotes = buildAnalysisNotes(
     results,
     interpolationThreshold,
@@ -160,11 +169,11 @@ export async function runExperiment(
 
   const best = results.reduce((a, b) => (b.testMSE < a.testMSE ? b : a));
   const minTrain = results.reduce((a, b) => (b.trainMSE < a.trainMSE ? b : a));
-  const thresholdDegIdeal = nTrain - 1;
-  const thresholdBeyondSweep = thresholdDegIdeal > config.maxComplexity;
-
   const summary: ExperimentSummaryData = {
     datasetSize: config.datasetSize,
+    testSize,
+    testEstimateReliable:
+      testSize >= DD_THRESHOLDS.MIN_RELIABLE_TEST_SIZE,
     noiseLevel: config.noiseLevel,
     randomSeed: config.randomSeed,
     bestComplexity: best.degree,

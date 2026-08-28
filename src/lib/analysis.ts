@@ -1,23 +1,34 @@
 import type { DoubleDescentVerdict, ModelResult } from "../types/experiment.ts";
 import { getMessages, type Locale } from "./i18n.ts";
 
-/** Tunable double-descent detection thresholds. */
+/** Calibrated double-descent detection thresholds. */
 export const DD_THRESHOLDS = {
+  /** Three points suppress isolated degree-grid jitter without erasing the peak. */
   SMOOTH_WINDOW: 3,
-  CLEAR_RISE: 1.5,
-  CLEAR_DROP: 0.7,
-  RISE: 1.2,
-  DROP: 0.85,
   /**
-   * A second minimum within 2× the first is in the same practical error
-   * regime; a fall that remains worse by more than 100% is not competitive.
+   * The wide-sweep measurements do not identify a statistical rise/drop
+   * cutoff. A factor of two is therefore an explicit visual-salience rule,
+   * not a fitted constant: the peak must double and then halve.
+   */
+  MIN_VISIBLE_RISE: 2,
+  MAX_VISIBLE_DROP: 0.5,
+  /**
+   * Task-1 calibration reports ratio<2 directly. This is the outer boundary
+   * of the same practical error regime; larger truth-target ratios were not
+   * considered a competitive return.
    */
   COMPETITIVE_SECOND_MIN: 2,
   /**
-   * A 100× rise is two orders of magnitude and treated as a numerical
-   * blow-up when the curve does not recover to the competitive regime.
+   * The measured interpolation spikes were 10^5–10^6 MSE while first minima
+   * were 0.03–0.25. A still-noncompetitive 100× rise is conservatively called
+   * numerical blow-up rather than double descent.
    */
   DIVERGENCE_RISE: 100,
+  /**
+   * With 10 test points, 22/24 seeds received a DD verdict; at 160 points that
+   * fell to 8/24. Below 160, a single run is too noisy for a "Clear" claim.
+   */
+  MIN_RELIABLE_TEST_SIZE: 160,
 } as const;
 
 export function findInterpolationThreshold(
@@ -55,7 +66,11 @@ interface CurvePoint {
  * Detect the classical U → peak → second descent pattern on the test-error curve.
  * Separates a numerical blow-up from an observed or absent double descent.
  */
-export function analyzeDoubleDescent(results: ModelResult[]): DoubleDescentVerdict {
+export function analyzeDoubleDescent(
+  results: ModelResult[],
+  testSize = Number.POSITIVE_INFINITY,
+  interpolationDegree?: number,
+): DoubleDescentVerdict {
   if (results.length < 8) return "No Clear Double Descent";
 
   const raw = results.map((r) => r.testMSE);
@@ -64,12 +79,32 @@ export function analyzeDoubleDescent(results: ModelResult[]): DoubleDescentVerdi
   }
   const smoothed = smooth(raw, DD_THRESHOLDS.SMOOTH_WINDOW);
 
-  // 1. First local minimum (classical sweet spot).
+  // 1. Classical sweet spot: the best point before known interpolation.
   let firstMin: CurvePoint | null = null;
-  for (let i = 1; i < smoothed.length - 1; i++) {
-    if (smoothed[i]! <= smoothed[i - 1]! && smoothed[i]! <= smoothed[i + 1]!) {
-      firstMin = { index: i, degree: results[i]!.degree, value: smoothed[i]! };
-      break;
+  if (interpolationDegree !== undefined) {
+    for (let i = 0; i < smoothed.length; i++) {
+      if (results[i]!.degree >= interpolationDegree) break;
+      if (!firstMin || smoothed[i]! < firstMin.value) {
+        firstMin = {
+          index: i,
+          degree: results[i]!.degree,
+          value: smoothed[i]!,
+        };
+      }
+    }
+  } else {
+    for (let i = 1; i < smoothed.length - 1; i++) {
+      if (
+        smoothed[i]! <= smoothed[i - 1]! &&
+        smoothed[i]! <= smoothed[i + 1]!
+      ) {
+        firstMin = {
+          index: i,
+          degree: results[i]!.degree,
+          value: smoothed[i]!,
+        };
+        break;
+      }
     }
   }
   if (!firstMin) {
@@ -132,6 +167,9 @@ export function analyzeDoubleDescent(results: ModelResult[]): DoubleDescentVerdi
     secondMin.value / Math.max(firstMin.value, 1e-12);
   const isCompetitive =
     secondMinRatio <= DD_THRESHOLDS.COMPETITIVE_SECOND_MIN;
+  const hasVisibleShape =
+    rise >= DD_THRESHOLDS.MIN_VISIBLE_RISE &&
+    dropRatio <= DD_THRESHOLDS.MAX_VISIBLE_DROP;
 
   let lowestPostPeakIndex = peak.index + 1;
   for (let i = peak.index + 1; i < smoothed.length; i++) {
@@ -149,18 +187,14 @@ export function analyzeDoubleDescent(results: ModelResult[]): DoubleDescentVerdi
   }
 
   if (
-    rise >= DD_THRESHOLDS.CLEAR_RISE &&
-    dropRatio <= DD_THRESHOLDS.CLEAR_DROP &&
-    secondMin.value < firstMin.value
+    hasVisibleShape &&
+    secondMin.value < firstMin.value &&
+    testSize >= DD_THRESHOLDS.MIN_RELIABLE_TEST_SIZE
   ) {
     return "Clear Double Descent";
   }
 
-  if (
-    rise >= DD_THRESHOLDS.RISE &&
-    dropRatio <= DD_THRESHOLDS.DROP &&
-    isCompetitive
-  ) {
+  if (hasVisibleShape && isCompetitive) {
     return "Possible Double Descent";
   }
 

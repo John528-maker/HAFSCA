@@ -35,6 +35,8 @@ export interface ModelResult {
 
 export interface ExperimentSummaryData {
   datasetSize: number;
+  testSize: number;
+  testEstimateReliable: boolean;
   noiseLevel: number;
   randomSeed: number;
   bestComplexity: number;

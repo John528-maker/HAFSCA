@@ -7,7 +7,11 @@ import { buildDataset, trueFunction } from "../src/lib/dataset.ts";
 import { vectorNorm } from "../src/lib/linalg.ts";
 import { meanSquaredError } from "../src/lib/metrics.ts";
 import { fitPolynomial, predict } from "../src/lib/regression.ts";
-import { analyzeDoubleDescent, findInterpolationThreshold } from "../src/lib/analysis.ts";
+import {
+  analyzeDoubleDescent,
+  DD_THRESHOLDS,
+  findInterpolationThreshold,
+} from "../src/lib/analysis.ts";
 import { defaultConfig, runExperiment } from "../src/lib/experiment.ts";
 import type { ModelResult } from "../src/types/experiment.ts";
 
@@ -129,9 +133,12 @@ console.log("7. analyzeDoubleDescent shape detection");
     };
   });
   assert(
-    analyzeDoubleDescent(clear) === "Clear Double Descent" ||
-      analyzeDoubleDescent(clear) === "Possible Double Descent",
-    `synthetic DD detected (got ${analyzeDoubleDescent(clear)})`,
+    analyzeDoubleDescent(clear, 460) === "Clear Double Descent",
+    `well-sampled synthetic DD is clear (got ${analyzeDoubleDescent(clear, 460)})`,
+  );
+  assert(
+    analyzeDoubleDescent(clear, 10) === "Possible Double Descent",
+    "10-point test set cannot produce a Clear verdict",
   );
 
   const flat: ModelResult[] = degrees.map((d) => ({
@@ -228,23 +235,68 @@ console.log("9. Numerical divergence is not double descent");
   );
 }
 
-console.log("10. Reproducible production double descent");
+console.log("10. Honest wide-sweep default");
 {
+  const config = defaultConfig();
+  assert(
+    config.datasetSize === 500 &&
+      config.trainRatio === 0.08 &&
+      config.noiseLevel === 0.3 &&
+      config.randomSeed === 1 &&
+      config.maxComplexity === 1280,
+    "default uses representative seed 1, 40/460 split, and a wide sweep",
+  );
   const result = await runExperiment(defaultConfig());
   const nTrain = result.dataset.train.length;
-  const first = result.results
-    .filter((model) => model.degree < nTrain)
-    .reduce((best, model) => (model.testMSE < best.testMSE ? model : best));
-  const postPeak = result.results
-    .filter((model) => model.degree > 2 * nTrain)
-    .reduce((best, model) => (model.testMSE < best.testMSE ? model : best));
   assert(
-    result.summary.doubleDescentStatus === "Clear Double Descent",
-    `default run → Clear Double Descent (got ${result.summary.doubleDescentStatus})`,
+    nTrain === 40 && result.dataset.test.length === 460,
+    `default split is 40 train / 460 test (got ${nTrain} / ${result.dataset.test.length})`,
   );
   assert(
-    postPeak.testMSE <= 2 * first.testMSE,
-    `post-peak error is competitive (${postPeak.testMSE} vs ${first.testMSE})`,
+    result.summary.doubleDescentStatus !== "Clear Double Descent" &&
+      result.summary.doubleDescentStatus !== "Possible Double Descent",
+    `default does not claim competitive DD (got ${result.summary.doubleDescentStatus})`,
+  );
+  assert(
+    result.summary.interpolationThreshold === nTrain - 1,
+    `default reports theoretical interpolation degree ${nTrain - 1}`,
+  );
+  assert(
+    result.summary.testEstimateReliable,
+    "default test estimate passes the 160-point reliability floor",
+  );
+}
+
+console.log("11. Interpolation threshold is noise-independent");
+{
+  for (const datasetSize of [20, 50, 100]) {
+    const expected = Math.floor(datasetSize * 0.8) - 1;
+    for (const noiseLevel of [0.2, 0.5, 1]) {
+      const result = await runExperiment({
+        datasetSize,
+        noiseLevel,
+        trainRatio: 0.8,
+        maxComplexity: expected,
+        randomSeed: 42,
+      });
+      assert(
+        result.summary.interpolationThreshold === expected,
+        `N=${datasetSize}, sigma=${noiseLevel} reports degree ${expected} (got ${result.summary.interpolationThreshold})`,
+      );
+    }
+  }
+}
+
+console.log("12. Detection calibration constants");
+{
+  assert(
+    DD_THRESHOLDS.COMPETITIVE_SECOND_MIN === 2 &&
+      DD_THRESHOLDS.DIVERGENCE_RISE === 100,
+    "competitive and divergence boundaries remain calibrated",
+  );
+  assert(
+    DD_THRESHOLDS.MIN_RELIABLE_TEST_SIZE === 160,
+    "Clear verdict requires at least 160 test points",
   );
 }
 
