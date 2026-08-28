@@ -8,6 +8,12 @@
 
 **Accuracy rule used here:** textbook-standard claims are stated as such and cited. Non-obvious or research-frontier claims are cited to the original paper. Anything not confidently verified is marked `NEEDS VERIFICATION` inline.
 
+> **[VERIFIED 2026-08-28]** A verification pass audited all four Phase 1 research documents. **This document's mathematics and citations were found sound and appropriately hedged — it was judged the most epistemically careful of the four**, and no substantive claim required correction. Three changes only:
+>
+> - Stale `RIDGE = 1e-10` references corrected: the engine's ridge is `RIDGE = 1e-8` applied **relative to the mean Gram diagonal** (§0 table, §4.4).
+> - **§9 item 6 is RESOLVED for the capped regime** — empirical bias/variance is numerically safe at \(n_{\text{train}}=40\), \(d\le12\), which makes that lab viable (§4.3).
+> - **§9 item 7 — the central scientific question — remains OPEN and is now marked BLOCKING.** See §9.
+
 ---
 
 ## 0. How this maps onto the existing site
@@ -30,7 +36,7 @@ The v1 MVP has **one topic** (double descent in polynomial regression), **one ro
 | Overfitting | **Taught (short card)** | `i18n.ts` concept card + analysis notes + train/test chart | **Extend, do not duplicate** |
 | Underfitting | **Mentioned, not a lesson** | Analysis note `analysis.underfitting` only; no concept card | **Extend** into a real lesson |
 | Bias–Variance tradeoff | Missing | Classical U-shape is implied by the error chart’s left half | New; this is the story double descent revises |
-| Regularization | **Used silently, not taught** | `RIDGE = 1e-10` in `linalg.ts`; min-norm itself is implicit ℓ₂ bias | New; ridge path reuses the existing engine |
+| Regularization | **Used silently, not taught** | **[CORRECTED 2026-08-28]** `RIDGE = 1e-8` in `linalg.ts`, applied **relative to the mean Gram diagonal** (lines 19, 45-50), not an absolute `1e-10`; min-norm itself is implicit ℓ₂ bias | New; ridge path reuses the existing engine |
 | Generalization | **Computed, not taught** | `generalizationGap` in `metrics.ts`; train vs test plotted | New lesson using the existing chart |
 | Double Descent | **The whole product** | Experiment + concept card + verdict | **Extend** with theory and honesty about when it fails to appear |
 | Interpolation Threshold | **Taught (short card) + detected** | Concept card, detector, chart reference line | **Extend**; detector has known issues (audit P7) |
@@ -493,7 +499,9 @@ Classical pedagogy: as model complexity grows, bias falls and variance rises; th
 
 **Visualization potential (aids understanding).** Many thin fitted curves (repeated datasets) plus their average (bias) plus a spread band (variance). Complexity on the x-axis, three stacked areas (bias², variance, noise) plus test error. This is one of the highest-value charts in ML education. Decoration: dartboard “bullseye” metaphors that confuse statistical bias with aiming.
 
-**Interactive experiment potential.** **Strongest reuse of the existing engine after the split lesson.** Student sets degree and noise; the app draws \(k\) independent training sets of size \(n\) (vary the seed) and overlays the \(k\) curves. Compute empirical bias² and variance at a grid of \(x\). Sweep degree: variance explodes near interpolation. `NEEDS VERIFICATION`: whether empirical bias/variance on this Chebyshev setup remains numerically stable at high degree given audit P3 (test MSE blow-up). If not, cap the sweep below the unstable region and say so.
+**Interactive experiment potential.** **Strongest reuse of the existing engine after the split lesson.** Student sets degree and noise; the app draws \(k\) independent training sets of size \(n\) (vary the seed) and overlays the \(k\) curves. Compute empirical bias² and variance at a grid of \(x\). Sweep degree: variance explodes near interpolation.
+
+**[RESOLVED 2026-08-28] for the capped regime.** Empirical bias/variance on this Chebyshev setup **is numerically safe** at \(n_{\text{train}} = 40\), \(d \le 12\): measured \(\kappa(\mathbf{X}) \lesssim 2\) and \(\lVert\theta\rVert_2 \le 0.73\) across the whole grid. **That makes the bias–variance lab viable** — the earlier concern does not block it. It is **not** safe at \(d \gtrsim 40\) with \(n = 80\), so the cap is the thing doing the work and it must be **enforced in code**, not merely stated (Research C §7.9). Note also that a degree sweep capped at 12 cannot show variance exploding "near interpolation," because it never reaches interpolation; say that in the copy rather than implying the fan-out is the interpolation peak.
 
 ---
 
@@ -501,7 +509,7 @@ Classical pedagogy: as model complexity grows, bias falls and variance rises; th
 
 **Definition.** An explicit modification of the training problem that penalizes complexity or otherwise constrains the solution, e.g. **ridge** (Tikhonov): minimize \(\|\Phi w - t\|_2^2 + \lambda \|w\|_2^2\). Related: Lasso (\(\lambda \|w\|_1\)), early stopping, dropout, data augmentation. \(\lambda\) is typically chosen on a **validation** set.
 
-The existing solver already adds \(\lambda = 10^{-10}\) “so the Gram matrix is invertible without erasing interpolation / double-descent phenomenology” (`linalg.ts`). That is regularization used as numerics, not as a lesson. The **min-norm interpolant** (the \(p > n\) branch) is equivalent to the \(\lambda \to 0^+\) limit of ridge — the “ridgeless” estimator studied by Hastie, Montanari, Rosset & Tibshirani (2022).
+**[CORRECTED 2026-08-28]** The existing solver already adds a ridge “so the Gram matrix is invertible without erasing interpolation / double-descent phenomenology” (`linalg.ts`) — but it is **relative**, not the absolute \(\lambda=10^{-10}\) recorded here previously. It applies \(\lambda = \texttt{RIDGE}\cdot\overline{\mathrm{diag}}(\mathbf{G})\) with `RIDGE` \(= 10^{-8}\) and \(\overline{\mathrm{diag}}\) the mean diagonal of the Gram matrix (`src/lib/linalg.ts:19, 45-50`), which keeps the regularization dimensionless as the degree changes. The applied \(\lambda\) therefore *moves with the problem*: the mean Gram diagonal was measured at \(\approx 41\) at \(p=41\) and \(\approx 2.3\) at \(p=161\). That is regularization used as numerics, not as a lesson. The **min-norm interpolant** (the \(p > n\) branch) is equivalent to the \(\lambda \to 0^+\) limit of ridge — the “ridgeless” estimator studied by Hastie, Montanari, Rosset & Tibshirani (2022).
 
 **Intuition.** A tax on using big weights, so the model prefers a simpler explanation that still fits reasonably.
 
@@ -515,7 +523,7 @@ The existing solver already adds \(\lambda = 10^{-10}\) “so the Gram matrix is
 
 **Visualization potential (aids understanding).** Coefficient magnitudes vs \(\lambda\); train/test error vs \(\lambda\) (U-shape in the classical regime). Overlay two fitted curves: \(\lambda \approx 0\) wiggly vs moderate \(\lambda\) smooth. High value.
 
-**Interactive experiment potential.** **High leverage, moderate cost.** Reuse `minNormLeastSquares` with a student-facing \(\lambda\) slider (today’s `RIDGE` is a hidden constant). Sweep \(\lambda\) at fixed degree, and sweep degree at several \(\lambda\). Show that enough ridge can **erase** interpolation (train MSE no longer hits ~0) — connecting Regularization to Interpolation Threshold.
+**Interactive experiment potential.** **High leverage, moderate cost.** Reuse `minNormLeastSquares` with a student-facing \(\lambda\) slider (today’s `RIDGE` is a hidden constant, and `minNormLeastSquares` still takes no \(\lambda\) argument). **[CORRECTED 2026-08-28]** Because the engine's \(\lambda\) is **relative to the mean Gram diagonal**, a slider over absolute \(\lambda\) would display a different number from the one applied, by a factor that itself changes as the student drags degree. **Decide and document whether the student-facing \(\lambda\) is absolute or relative before building the slider** (Research C §4.3; Research B §2.2). Then sweep \(\lambda\) at fixed degree, and sweep degree at several \(\lambda\). Show that enough ridge can **erase** interpolation (train MSE no longer hits ~0) — connecting Regularization to Interpolation Threshold.
 
 ---
 
@@ -809,8 +817,10 @@ Internal:
 3. **Linear scaling rule** \(\eta \propto\) batch size as a general fact — not to be taught as a theorem for this site’s models (Goyal et al. is ImageNet-scale practice).
 4. **Default width/seed for a ReLU XOR demo** reliably succeeding in-browser.
 5. **Bias–variance-style decomposition for 0–1 loss** as a teaching default (squared-loss decomposition is solid; 0–1 is not the same formula).
-6. **Empirical bias/variance sweep** on the current Chebyshev engine remaining numerically stable at high degree (tied to audit P3).
-7. **Whether the existing estimator + dataset can produce genuine double descent** (`secondMin < firstMin`) for any reachable config (inherited from audit §3.3; still the central scientific open question of the product).
+6. ~~**Empirical bias/variance sweep** on the current Chebyshev engine remaining numerically stable at high degree~~ — **[RESOLVED 2026-08-28] for the capped regime.** Safe at \(n_{\text{train}}=40\), \(d\le12\): \(\kappa(\mathbf{X})\lesssim2\), \(\lVert\theta\rVert_2\le0.73\). The bias–variance lab is viable under that cap, which must be enforced in code. **Not** safe at \(d\gtrsim40\) with \(n=80\) (§4.3).
+7. ### 🚫 **BLOCKING — OPEN. Whether the existing estimator + dataset can produce genuine double descent (`secondMin < firstMin`) for any reachable config.**
+   **This is the central scientific question of the product and it is NOT settled.** It was not settled by the newly adopted defaults; if anything those made it worse. At `datasetSize=50`, `noise=1.0`, `maxComplexity=320`, `analyzeDoubleDescent` returns the **strictest `"Clear Double Descent"` tier** on a curve **peaking at \(4.88\times10^{6}\) test MSE at degree 30**, with the interpolation threshold misreported as **51** against a theoretical **39**. That is the original dishonest-verdict defect returning in its most severe form. Full evidence — including the non-noise-aware `1e-3` cutoff, the knife-edge "threshold = 79" agreement, and the 10-point test set whose expected MSE cannot fall below \(\sigma^2=1\) — is recorded in `docs/phase2-synthesis.md`.
+   **Consequence: no lesson prose about double descent may be authored, and no lesson may promise a second descent, until this is settled.** A separate engineering investigation is in flight on exactly this. Nothing in this document licenses writing L14 copy before it lands.
 8. **Nakkiran EMC \(\varepsilon = 0.1\)** as a portable constant (authors call it heuristic).
 9. **Tiny in-browser net fitting random labels** as a fair Zhang-style demo.
 10. **Benign-overfitting covariance toy** actually displaying Bartlett’s contrast at browser scale.

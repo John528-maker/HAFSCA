@@ -8,6 +8,16 @@
 
 This spec designs the next interactive ML labs so they **extend the existing double-descent experiment**, not replace it with a parallel stack. Engineers implement from here; a reviewer checks the math first.
 
+> **[VERIFIED 2026-08-28]** A verification pass measured this spec against the real engine. Results, in order of how much they change what you build:
+>
+> - **§3 (gradient descent) is fully verified** and its acceptance tests are shippable verbatim. See the box at the head of §3.
+> - **§2.4 contained a residual-sign contradiction with §3.4** that would have made gradient descent *ascend*. Fixed; see the warning at §2.4.
+> - **§4.2's "best degree is 3" claim is measurably wrong** (argmin is 4; 3/4/5 are a 4.5% plateau) and the lab is **seed-fragile** (at seed 1 it shows no overfitting at all). See §4.2.
+> - **The engine's ridge is relative, not absolute**, which stales every `RIDGE = 1e-10` reference and blocks the λ slider spec until an absolute-vs-relative decision is made (§4.3, §11.2).
+> - **§7's variance divisor is settled at \(M-1\)**, and a second-order bias in the plug-in bias² estimator was found (§7.4). §7's numerical safety under its \(d\le12\) cap is **confirmed** (§7.9).
+>
+> Inline markers `**[VERIFIED 2026-08-28]**` / `**[CORRECTED 2026-08-28]**` show exactly what was audited. Open items are re-classified in §13.
+
 ---
 
 ## 0. The existing pattern (must be reused)
@@ -35,7 +45,7 @@ ExperimentConfig  →  runExperiment(config, onProgress)  →  ExperimentResult
 | PRNG / noise | `src/lib/random.ts` | Mulberry32, Box–Muller `N(0,1)`, Fisher–Yates |
 | Dataset | `src/lib/dataset.ts` | `y = sin(2πx) + σ·ε` on `x ∈ [-1,1]`, arcsine sampling `x = cos(πU)`, 80/20 split |
 | Features + fit | `src/lib/regression.ts` | Chebyshev `T_k`, `fitPolynomial` → `minNormLeastSquares` |
-| Linear algebra | `src/lib/linalg.ts` | Primal / dual ridge-LS, GE + Jacobi fallback, `RIDGE = 1e-10` |
+| Linear algebra | `src/lib/linalg.ts` | Primal / dual ridge-LS, GE + Jacobi fallback, **[CORRECTED 2026-08-28]** `RIDGE = 1e-8` applied **relative to the mean Gram diagonal** (lines 19, 45-50), not an absolute `1e-10` |
 | Metrics | `src/lib/metrics.ts` | `MSE = (1/n) Σ (ŷ − y)²`, `gap = testMSE − trainMSE` |
 | Analysis | `src/lib/analysis.ts` | Interpolation cutoff, DD verdict, notes **only from patterns that are present** |
 | Orchestration | `src/lib/experiment.ts` `runExperiment` | Validate → build data → loop grid → fit/predict/score → yield → summarize |
@@ -143,6 +153,19 @@ No Run button. Recompute on every pointer move.
 
 Let the current points be \(\{(x_i,y_i)\}_{i=1}^n\). Model \(\hat y = w x + b\) if intercept is on, else \(\hat y = w x\).
 
+> ### ⚠ **[CORRECTED 2026-08-28] RESIDUAL SIGN — read this before you type any formula from this document.**
+>
+> **The residual on this site is prediction minus target:**
+> \[
+> r_i \;=\; \hat y_i - y_i \;=\; w x_i + b - y_i
+> \]
+> This matches §3.4 of this document and Research B §2.2, and it is the **only** sign under which this document’s own gradient
+> \(\partial L/\partial w = \frac{2}{n}\sum_i x_i r_i\) is correct.
+>
+> This subsection previously defined \(r_i = y_i - \hat y_i\) and labelled it “signed; statistics convention,” contradicting §3.4. **That was wrong and it was dangerous:** substituting the old \(y-\hat y\) sign into the §3.4 gradient flips it, and gradient descent would **ascend** the loss. An engineer copying these two formulas from two sections of the same document would have shipped a lab that runs uphill.
+>
+> Everything downstream of the residual on this page — \(r_i^2\), SSE, MSE, RMSE, \(R^2\) — is sign-invariant, so no displayed number changes. Only the sign of the *signed* residual readout and the direction of the residual stems change, and both must now read \(\hat y_i - y_i\).
+
 **Fit (intercept on)** — closed form, also the test oracle for `minNormLeastSquares`:
 
 \[
@@ -176,7 +199,7 @@ The closed form is the golden-value check, not a second solver in production.
 | Slope \(w\) | as above |
 | Intercept \(b\) | as above |
 | Prediction \(\hat y_i\) | \(w x_i + b\) |
-| Residual \(r_i\) | \(y_i - \hat y_i\) (signed; statistics convention) |
+| Residual \(r_i\) | **[CORRECTED]** \(\hat y_i - y_i = w x_i + b - y_i\) (signed; **prediction minus target**, matching §3.4, `metrics.ts` and Research B §2.2). **Not** \(y_i-\hat y_i\) |
 | Squared error \(r_i^2\) | — |
 | Contribution to MSE | \(r_i^2 / n\) (these **sum to MSE**) |
 | SSE | \(\sum r_i^2\) |
@@ -200,7 +223,7 @@ Hover a point: show \((x_i, y_i)\), \(\hat y_i\), \(r_i\), \(r_i^2/n\).
 
 ### 2.6 Mathematical model
 
-Ordinary least squares, unique minimizer of \(\frac1n\|X\theta - y\|_2^2\) when \(X\) has full column rank. Equivalent normal equation \((X^\top X)\theta = X^\top y\). With two columns this is the closed form above. Existing ridge `λ = 1e-10` is negligible here; leave it on so there is one solver.
+Ordinary least squares, unique minimizer of \(\frac1n\|X\theta - y\|_2^2\) when \(X\) has full column rank. Equivalent normal equation \((X^\top X)\theta = X^\top y\). With two columns this is the closed form above. **[CORRECTED 2026-08-28]** the engine's ridge is `RIDGE = 1e-8` **times the mean Gram diagonal** (`src/lib/linalg.ts:19, 45-50`), i.e. relative, not the absolute `1e-10` this document previously assumed. It is still negligible for a well-spread 2-column design; leave it on so there is one solver — but see §2.9, because "relative" changes the failure mode.
 
 ### 2.7 Expected behavior
 
@@ -229,7 +252,7 @@ Second aha: with intercept off, the line misses a cloud that does not pass throu
 | --- | --- | --- |
 | Singular \(S_{xx}\) | All \(x_i\) equal, or n = 1 | Require n ≥ 2 and \(S_{xx} > 10^{-12}\). Do not call GE. Surface a status, not NaN. |
 | SST = 0 | All \(y_i\) equal | \(R^2\) undefined; show “—”, not 0 or 1 |
-| Ridge hiding singularity | `RIDGE=1e-10` would still return *a* slope if x’s differ by 1e-16 | Rank check on \(S_{xx}\) *before* the solver |
+| Ridge hiding singularity (**fake slope**) | **[CORRECTED 2026-08-28] — stale in form, still valid in substance.** The constant is no longer an absolute `1e-10`; the engine applies `RIDGE = 1e-8` × mean Gram diagonal. The hazard **persists and is not weaker**: because the ridge *scales with* \(\sum x_i^2\), it grows with the data instead of staying negligibly small, so a design whose \(x_i\) differ by \(10^{-16}\) will still be silently regularized into returning *a* confident-looking slope | Unchanged and still correct: **rank check on \(S_{xx}\) *before* calling the solver.** Do not rely on the solver failing |
 | Drag outside domain | Pointer leaves SVG | Clamp to plot window |
 | Integer seed 0 | Mulberry32 uses `seed >>> 0` | Allowed; document that 0 is a valid seed |
 
@@ -247,6 +270,22 @@ O(n) closed form, n ≤ 24. **Recompute on every pointermove. No debounce, no wo
 ---
 
 ## 3. Experiment 2 — Gradient Descent
+
+> ### ✅ **[VERIFIED 2026-08-28] This section is fully verified against the real engine. It is the best-specified lab in this document, and its acceptance tests can be shipped verbatim.**
+>
+> Measured, not asserted:
+>
+> | Quantity | Predicted here | Measured | Agreement |
+> | --- | --- | --- | --- |
+> | \(H_{22}\) | exactly 2 | **2.0000** | exact |
+> | \(\alpha_{\mathrm{crit}} = 2/\lambda_{\max}\) at \(s=1\), seed 42 | 0.99418 (analytic) | **0.99503** | 0.09% |
+> | \(\alpha_{\mathrm{crit}}\) at \(s=10\) | \(\approx 0.02\) | **0.02030** | ✓ |
+> | Noiseless OLS \((w,b)\), \(s=1\) | \((0.8,\,0.15)\) | **(0.79510, 0.16319)** | ✓ |
+> | Noiseless OLS \((w,b)\), \(s=10\) | \((0.08,\,0.15)\) | **(0.07951, 0.16319)** | ✓, confirms \(w^\star\approx 0.8/s\) |
+>
+> So the engineered "aha" works **exactly as specified**: with the default \(\alpha=0.2\), dragging feature scale to \(s=10\) drives \(\alpha\) above \(\alpha_{\mathrm{crit}}=0.0203\) and the run diverges.
+>
+> The caveat flagged in §3.6 — that the default-seed sample has \(\bar x \ne 0\) — is **real but negligible**: \(\bar x = 0.0548\) lifts \(\lambda_{\max}\) from 2 to 2.0117, a **0.6%** effect. Keep printing \(\alpha_{\mathrm{crit}}\) on screen anyway; the point of the selfcheck is to catch a *wrong Hessian factor*, not this.
 
 ### 3.1 Learning objective
 
@@ -268,7 +307,7 @@ Fixed dataset during a run (the loss surface must not move under the trajectory)
 
   Use unscaled x in \(f\) so changing \(s\) changes geometry, not the generative slope in original units. After scaling, the OLS slope in *scaled* coordinates is \(w^\star = 0.8 / s\) in the noiseless limit.
 
-  **NEEDS VERIFICATION:** with σ = 0.1 and n = 20, the OLS \((w^\star, b^\star)\) should still lie near \((0.8/s,\, 0.15)\). Lock with a seed-42 golden test at implementation time.
+  **[VERIFIED 2026-08-28]** — measured on the real engine: noiseless OLS is \((w,b) = (0.79510,\, 0.16319)\) at \(s=1\) and \((0.07951,\, 0.16319)\) at \(s=10\), confirming \(w^\star \approx 0.8/s\). Still lock it with a seed-42 golden test at implementation time; these are the golden values.
 
 - No train/test split. The loss *is* the training MSE on these 20 points. (A “generalization” overlay would confuse the contour.)
 
@@ -387,7 +426,7 @@ Default α = 0.2 should converge monotonically. The UI must still **compute** α
 
 When \(s\) grows, \(\sum x_i^2 \sim s^2 n/2\), so \(a \sim s^2\), \(\lambda_{\max} \sim \max(s^2, 2)\), \(\alpha_{\mathrm{crit}} \sim 2/s^2\) for \(s \gtrsim \sqrt{2}\). At \(s = 10\), expect \(\alpha_{\mathrm{crit}} \approx 0.02\). The default α = 0.2 then **diverges**. That is the engineered aha.
 
-**NEEDS VERIFICATION:** the default-seed sample may have \(\bar x \neq 0\), which lifts \(\lambda_{\max}\) slightly above 2 even at s = 1. Implementers must print α_crit on screen and add a selfcheck: for seed 42, s = 1, `α_crit ∈ (0.7, 1.3)` or whatever the measured interval is — do not ship if it is 0.01 or 50 (that would mean the Hessian factor is wrong).
+**[VERIFIED 2026-08-28]** — the default-seed sample does have \(\bar x \neq 0\): \(\bar x = 0.0548\), which lifts \(\lambda_{\max}\) from 2 to **2.0117**, a **0.6%** effect. Measured \(\alpha_{\mathrm{crit}} = 0.99503\) at seed 42, \(s=1\) (analytic 0.99418; 0.09% agreement), and \(0.02030\) at \(s=10\). Implementers must still print α_crit on screen and ship the selfcheck `α_crit ∈ (0.7, 1.3)` at seed 42, s = 1 — its job is to catch a wrong Hessian factor (a value of 0.01 or 50), not this 0.6%.
 
 ### 3.7 Expected behavior
 
@@ -460,7 +499,25 @@ Chebyshev \(T_1=x\), \(T_3=4x^3-3x\). Exact noiseless recovery at degree 3 must 
 - Defaults: `datasetSize = 50`, `trainRatio = 0.8` (n_train = 40, n_test = 10), `σ = 0.25`, seed `42`.
 - **Hard cap:** `maxDegree = 12` so `p = 13 ≪ n_train = 40`. This stays far from the known high-degree blow-up (audit P3, which appeared near degree ~n).
 
-**NEEDS VERIFICATION:** seed 42, these defaults, Chebyshev OLS, degrees 0..12: test MSE at degree 3 should be within a small factor of the minimum test MSE on that grid, and test MSE at degree 12 should exceed test MSE at degree 3. If this U-shape fails (unlucky split, too little noise, too much noise), change σ or n **before** shipping — do not “fix” it by stretching the degree into the unstable regime.
+> ### **[CORRECTED 2026-08-28] The U-curve is real. The claim "the best degree is 3, the true degree" is NOT, and must never appear in copy.**
+>
+> Measured at exactly these defaults (cubic truth, seed 42, \(n=50\), \(\sigma=0.25\), \(n_{\text{train}}=40\), \(n_{\text{test}}=10\)):
+>
+> - **The argmin is degree 4, not 3.**
+> - Degrees 3 / 4 / 5 form a **plateau within 4.5%**: test MSE **0.0430 / 0.0412 / 0.0425**. With only **10 test points** those three are statistically indistinguishable.
+> - The U-shape itself is real and pedagogically excellent: train MSE falls **monotonically 0.261 → 0.034** while test MSE rises to **0.206** — a **4.8×** rise.
+>
+> **Hard UI constraint:** no copy, caption, analysis note or summary card may say *"the best degree is 3, which is the true degree."* **The data does not support it.** Copy must report a **plateau**: something of the form "degrees 3–5 are tied within a few percent on only 10 test points — the data cannot single one out." This is the same honesty rule §4.11 already states; it is now a measured requirement, not a precaution.
+>
+> **[CORRECTED 2026-08-28] Seed fragility — newly discovered, and it changes the control design.** Measured argmin across seeds \(\{1, 7, 42, 99, 2024\}\) = \(\{7, 3, 4, 4, 3\}\).
+>
+> - **At seed 1 the lab breaks entirely.** The argmin is **7**, and test(12) = **0.068** vs test(3) = **0.060** — there is **no visible overfitting at all**.
+> - Seed is a **student-facing control**, so a student *will* reach seed 1. The analysis notes must therefore be able to emit *"this sample does not show a clean sweet spot"* and the lab must not fake a U when there isn't one. This is a required predicate, not a nice-to-have.
+> - **Seed 42 remains a defensible default.**
+> - **The left arm is non-monotone:** test(2) = **0.330** > test(1) = **0.253**. This is not noise and not a bug — the truth is an **odd** function, so a degree-2 term can only fit noise. It needs a caption saying so, or a student will read the bump as a broken chart.
+> - **Confirmed:** at \(\sigma = 0\), degree 3 recovers coefficients \([0,\, 0.2,\, 0,\, 0.7]\) **exactly**.
+
+The original `NEEDS VERIFICATION` on this point is closed by the measurements above: the U-shape holds at the default seed, so there is no need to change σ or n. The instruction it carried still stands — if a future defaults change breaks the U-shape, fix σ or n, **never** by stretching the degree into the unstable regime.
 
 Optional second truth in an advanced dropdown: `sin(2πx)` (the DD lab’s \(f\)), labeled “harder target (no finite polynomial is exact).” Default remains the cubic.
 
@@ -473,14 +530,23 @@ Optional second truth in an advanced dropdown: `sin(2πx)` (the DD lab’s \(f\)
 | Dataset size | select | 30, 50, 80 | 50 | — | More data → U-curve shifts right |
 | Seed | number | integer | 42 | 1 | Unlucky splits exist; be honest |
 | Show truth | checkbox | on | — | — | Wiggles vs \(f\) |
-| Ridge λ | range (log) | [10^{-10}, 10^{2}] | 10^{-10} | ×10^{0.1} | Preview of lab 5; default ≈ current solver |
+| Ridge λ | range (log) | **see the blocking note below** | **see below** | ×10^{0.1} | Preview of lab 5; default ≈ current solver |
 | Regenerate | button | — | — | — | New sample, same settings |
+
+> ### ⚠ **[CORRECTED 2026-08-28] The λ slider spec is BLOCKED on a decision that must be made before anyone writes it.**
+>
+> Two facts, both re-checked against the engine:
+>
+> 1. **`minNormLeastSquares(X, y)` still takes no λ argument.** The API change this document requires is **real and still open**. Nothing has been implemented.
+> 2. **The engine's λ is now *relative*.** It applies \(\lambda_{\text{applied}} = \texttt{RIDGE}\cdot\overline{\mathrm{diag}}(\mathbf{G})\) with `RIDGE = 1e-8` (`src/lib/linalg.ts:19, 45-50`). So a student-facing slider over **absolute** values \([10^{-10}, 10^{2}]\) would display a λ that differs from the λ actually applied **by the mean Gram diagonal** — measured **≈ 41 at \(p=41\)** and **≈ 2.3 at \(p=161\)**. The discrepancy is not a constant; it moves as the student drags degree.
+>
+> **Whether the student-facing λ is absolute or relative must be decided and documented before the slider is built.** Shipping the range in the table above without that decision would put a number on screen that is off by a factor that changes under another control — the definition of a dishonest instrument. See Research B §2.2 for the three-way λ ambiguity this belongs to.
 
 Degree and λ are **live**. Dataset knobs regenerate points (cheap) then refit. No full Run sweep required; optionally precompute the 13-point error curve whenever data/λ changes so the U-chart is instant.
 
 ### 4.4 Outputs
 
-Reuse `fitPolynomial` / `predict` / `meanSquaredError` / `generalizationGap`. For the λ slider, pass λ into the solver instead of the global `RIDGE` constant — **the engine must accept λ as an argument** (today it is a module const). That is a small, shared API change, not a new algorithm.
+Reuse `fitPolynomial` / `predict` / `meanSquaredError` / `generalizationGap`. For the λ slider, pass λ into the solver instead of the global `RIDGE` constant — **the engine must accept λ as an argument** (today it is a module const). That is a small, shared API change, not a new algorithm. **[VERIFIED 2026-08-28]** — still true: `minNormLeastSquares(X, y)` takes no λ. And the new argument must carry an explicit absolute-vs-relative contract; see the blocking note in §4.3.
 
 | Display | Computation |
 | --- | --- |
@@ -490,7 +556,7 @@ Reuse `fitPolynomial` / `predict` / `meanSquaredError` / `generalizationGap`. Fo
 | \(\|\theta\|_2\) | existing `vectorNorm` |
 | Train/test \(R^2\) | \(1 - \mathrm{MSE}/\mathrm{Var}(y_{\mathrm{split}})\) with population Var = \(\frac1n\sum(y-\bar y)^2\) |
 | Best d on the precomputed grid | \(\arg\min_d\) test MSE, for the summary card |
-| Status | `underfit` if d < 3 and both errors high; `sweet spot` if d is the min-test degree; `overfit` if train MSE < 0.8 × test MSE **and** d > argmin_test; else `unclear` |
+| Status | `underfit` if d < 3 and both errors high; `sweet spot` if d is the min-test degree; `overfit` if train MSE < 0.8 × test MSE **and** d > argmin_test; else `unclear`. **[CORRECTED 2026-08-28]** add a `plateau` state: when several degrees are within ~10% of min test MSE (which is the case at the defaults — 3/4/5 within 4.5%), the UI must say so rather than crown one degree. And `unclear` must be reachable and honest — at seed 1 there is no sweet spot at all |
 
 Do **not** run `analyzeDoubleDescent` here. Do not mention interpolation unless the student opts into the sine target *and* raises a future cap — which v1 must not allow.
 
@@ -523,7 +589,8 @@ Primal solve (`p ≤ n` always, given the cap): \(\theta = (X^\top X + \lambda I
 | d = 0 | Horizontal line at train mean; both errors high |
 | d = 1 | Odd linear-ish; still underfits a cubic |
 | d = 3, σ = 0 | Train and test MSE ~ 0; θ ≈ `[0, 0.2, 0, 0.7]` |
-| d = 3, σ = 0.25 | Sweet spot: test MSE near a floor set by noise |
+| d = 3, σ = 0.25 | **[CORRECTED]** Near the floor, but **on a plateau**: measured test MSE 0.0430 (d=3) / 0.0412 (d=4) / 0.0425 (d=5) — argmin is d=4 and the three are within 4.5% on 10 test points. Do not label d=3 "the sweet spot because it is the true degree" |
+| d = 2 | **[CORRECTED]** Test MSE 0.330, **worse than d=1** (0.253). Not a bug: the truth is odd, so a degree-2 term can only fit noise. This bump needs a caption |
 | d = 10–12 | Fit wiggles through train points; train MSE down; test MSE up |
 | σ → 0 | Overfit gap shrinks (less noise to memorize) but high-d still interpolates idiosyncrasy of the sample x’s |
 | σ → 0.8 | Sweet spot may move left; U-curve noisier because n_test = 10 |
@@ -545,7 +612,7 @@ Failure cases to **show honestly**: n_test = 10 makes the U-curve jagged. Analys
 | Non-finite θ or MSE | If `!Number.isFinite` on any coefficient or metric: drop that degree from the curve, badge `numerical failure`, do not connect a line through 1e6 |
 | Coefficient explosion | If \(\|\theta\|_2 > 10^4\), treat as failure even if MSE looks OK (cancellation) |
 | Prediction spikes between sample x | 201-point curve can still overshoot. Y-axis: clip plotted \(\hat y\) to `[-4, 4]` for drawing only; tooltip shows raw; if raw exceeds clip, caption “curve clipped for display” |
-| λ = 0 vs `RIDGE=1e-10` | Expose λ; default 1e-10 to match current solver; 0 is allowed at d ≤ 12 |
+| λ = 0 vs the engine's ridge | **[CORRECTED 2026-08-28]** Expose λ, but the "match the current solver" default is **not** `1e-10` — the engine applies `1e-8` × mean Gram diagonal. Pick the default only after the absolute-vs-relative decision in §4.3. λ = 0 remains allowed at d ≤ 12 |
 | Tiny test set | Caption n_train / n_test. If n_test < 8, warn |
 | Log-y on this chart | Allowed as a toggle, default off. Tooltip always raw (ErrorChart pattern) so a spike cannot hide |
 
@@ -626,9 +693,9 @@ a_{\ell} = \varphi(w\, a_{\ell-1} + b),\quad \ell = 1,\ldots,L
 
 Display \(a_L\) and \(\delta_L = \partial a_L / \partial a_0\). Also display the per-layer table \(\lvert\varphi'(z_\ell) w\rvert\).
 
-**Panel C.** \(z_i = w x_i + b\), \(a_i = \varphi(z_i)\). Dead fraction \(= \frac1n \#\{i : z_i \le 0\}\). If ReLU and dead fraction = 1: “Gradient w.r.t. (w, b) is exactly 0 on this batch. GD cannot revive this unit.” That statement is exact for ReLU (subgradient {0} on the open half-space; at 0 we use 0, matching PyTorch).
+**Panel C.** \(z_i = w x_i + b\), \(a_i = \varphi(z_i)\). Dead fraction \(= \frac1n \#\{i : z_i \le 0\}\). If ReLU and dead fraction = 1: “Gradient w.r.t. (w, b) is exactly 0 on this batch. GD cannot revive this unit.” That statement is exact for ReLU: the subgradient is \(\{0\}\) on the open half-space \(z<0\), and **this site's convention is \(\varphi'(0)=0\)**.
 
-**NEEDS VERIFICATION:** confirm PyTorch `relu` backward is 0 at exactly 0 (it is, as of common 2.x docs). If the course wants the subgradient interval, label the convention rather than changing it later.
+**[CORRECTED 2026-08-28]** The former claim that this "matches PyTorch," and the `NEEDS VERIFICATION` asking someone to confirm it, are both **deleted**. That claim cannot be verified in this repo (there is no PyTorch here), and it buys nothing pedagogically. State **our own convention** — \(\varphi'(0)=0\) for ReLU — label it as a convention, and move on. A student does not need an appeal to another framework's authority to understand that a derivative at a kink is a choice.
 
 ### 5.5 Visualization
 
@@ -659,9 +726,9 @@ Max \(\sigma' = 1/4\) at 0. \(\sigma'(z)=0.01\) at \(z = \pm \log(99) \approx \p
 
 **Tanh:** `Math.tanh` (stable). \(\tanh'(z)=1-\tanh^2(z)\). Max 1 at 0. \(\tanh'(z)=0.01\) at \(z = \pm \mathrm{artanh}(0.994987...) \approx \pm 2.993\).
 
-**ReLU:** \(\varphi(z)=\max(0,z)\). \(\varphi'(z)=1_{z>0}\), **\(\varphi'(0)=0\)** (PyTorch convention).
+**ReLU:** \(\varphi(z)=\max(0,z)\). \(\varphi'(z)=1_{z>0}\), **\(\varphi'(0)=0\)** — **[CORRECTED 2026-08-28]** this is **this site's stated convention**, chosen so that the dead-unit demo in Panel C is exactly true. The former "(PyTorch convention)" attribution is deleted: unverifiable here, and unnecessary.
 
-**Leaky ReLU:** \(\varphi(z)=\max(\alpha z, z)\). \(\varphi'(z)=\alpha\) for \(z<0\), \(1\) for \(z>0\), \(\varphi'(0)=1\) if we consider the positive side; **specify \(\varphi'(0)=1\)** so a unit sitting at 0 is not dead. **NEEDS VERIFICATION** vs PyTorch (`leaky_relu` uses 1 at 0 in common implementations — confirm in the target torch version if the lesson text says “matches PyTorch”).
+**Leaky ReLU:** \(\varphi(z)=\max(\alpha z, z)\). \(\varphi'(z)=\alpha\) for \(z<0\), \(1\) for \(z>0\), and **this site's convention is \(\varphi'(0)=1\)** so a unit sitting exactly at 0 is not treated as dead. **[CORRECTED 2026-08-28]** — the former "matches PyTorch" claim and its `NEEDS VERIFICATION` are deleted for the same reason. Label \(\varphi'(0)\) as *our* convention in the UI, at both kinks, and never claim parity with a framework this repo does not contain.
 
 **ELU:** \(\varphi(z)=z\) if \(z>0\) else \(\alpha(e^{z}-1)\). \(\varphi'(z)=1\) if \(z>0\) else \(\alpha e^{z}\). Default α = 1. Use `Math.expm1` for φ.
 
@@ -690,7 +757,12 @@ z + \log1p(e^{-z}) & z > 0 \\
 \phi(z)=\frac{1}{\sqrt{2\pi}}e^{-z^2/2}
 \]
 
-**NEEDS VERIFICATION:** `Math.erf` availability on the browsers this site targets. If missing, use the tanh approximation \(\mathrm{GELU}(z)\approx \frac12 z\bigl(1+\tanh[\sqrt{2/\pi}(z+0.044715 z^3)]\bigr)\) and **label it as approximation**; do not silently mix exact φ with approximate φ'.
+**[CORRECTED 2026-08-28] There is no `Math.erf`.** `erf` is **not part of ECMAScript** and is not implemented by any JavaScript engine. The "if missing, fall back" framing above was wrong: there is nothing to fall back *from*. The choice is binary and must be made up front:
+
+- **implement `erf` yourself** (e.g. Abramowitz–Stegun 7.1.26 or a rational/continued-fraction approximation, with its accuracy stated), **or**
+- **use the tanh approximation** \(\mathrm{GELU}(z)\approx \frac12 z\bigl(1+\tanh[\sqrt{2/\pi}(z+0.044715 z^3)]\bigr)\) and **label it as an approximation in the UI.**
+
+Either way, do not silently mix an exact φ with an approximate φ′. There is no fallback question here, only an implementation decision.
 
 **Identity** (control): φ = z, φ' = 1. The chain then has \(\delta_L = w^L\). Teaches exploding (|w|>1) vs vanishing (|w|<1) *without* saturation.
 
@@ -857,7 +929,18 @@ Integrated with the arcsine measure (average over the grid **or** over arcsine n
 
 Display: mean bias², mean var, σ², sum, and mean squared error of the M models vs f on the grid.
 
-**NEEDS VERIFICATION:** Bessel correction `M-1` vs `M` in the variance estimator. Either is a Monte Carlo estimator; pick `M-1`, document it, and do not claim the bars sum to test MSE on a finite holdout (that is a different number). The identity
+> ### **[CORRECTED 2026-08-28] Use the \(M-1\) divisor. This is decided, not a preference.**
+>
+> The \(1/M\) version is **biased low by a factor \((M-1)/M\)** — that is **12.5% at \(M=8\)**, which is one of this document's own offered settings. Variance fanning out is the *entire point* of the lab, so systematically shrinking the variance bars by an eighth is not an acceptable rounding choice. The formula above (\(1/(M-1)\)) is correct as written; keep it and document it.
+>
+> **Second-order issue this document originally missed.** The plug-in bias estimator \((\bar g - f)^2\) is **biased upward** by \(\mathrm{Var}(\hat g)/M\), because \(\bar g\) is itself a noisy estimate of \(\mathbb{E}[\hat g]\). So the stacked bars **overstate bias²** — and they do so in exactly the direction that *flatters* the decomposition, making the classical story look tidier than the data. Two honest remedies; ship at least one:
+>
+> - **(a) Debias:** plot \((\bar g - f)^2 - \widehat{\mathrm{Var}}/M\), clipped at 0.
+> - **(b) Overlay a check:** keep the plug-in bias, and additionally draw the direct estimator \(\frac1M\sum_m (\hat g_m - f)^2\), which is **unbiased for bias² + variance with no correction at all**. Any gap between it and the stacked total is then visible on screen — honesty by construction rather than by footnote.
+>
+> Keep this document's own existing rule as well: **the bars must not be labelled "test MSE on a holdout."** They are grid-versus-\(f\) plus a known \(\sigma^2\), which is a different quantity.
+
+The identity
 
 \[
 \mathbb{E}[(\hat g(x)-y)^2]=\mathrm{Bias}^2(x)+\mathrm{Var}(x)+\sigma^2
@@ -872,7 +955,7 @@ holds for \(y=f(x)+\varepsilon\) independent of the training sample. Finite M ma
 
 ### 7.6 Model
 
-Independent OLS Chebyshev fits, degree d, λ = 1e-10, cap d ≤ 12.
+Independent OLS Chebyshev fits, degree d, engine default ridge (**[CORRECTED]** `RIDGE = 1e-8` × mean Gram diagonal, not an absolute `1e-10`), cap d ≤ 12.
 
 ### 7.7 Expected behavior
 
@@ -887,6 +970,12 @@ If M = 8, variance bars jitter — note “M is small.”
 ### 7.9 Hazards
 
 Same polynomial cap. M = 40 × 7 degrees × one fit: still OK on main thread with yields (~280 fits of p≤13). **Batch + progress + yield; worker if we later raise M or d.** Do not interpret a wiggly bias² vs d (Monte Carlo) as a real double dip.
+
+> ### ✅ **[VERIFIED 2026-08-28] Numerical safety of this lab is CONFIRMED — under its own cap, and only under its own cap.**
+>
+> Measured across the whole \(d \le 12\) grid at \(n_{\text{train}} = 40\): \(\kappa(\mathbf{X}) \lesssim 2\) and \(\lVert\theta\rVert_2 \le 0.73\). That is not "acceptable," it is comfortable — the cap is what makes this lab viable at all.
+>
+> **The cap must be enforced in code, not only in prose.** Nothing currently enforces it. A `maxDegree` constant that only lives in a markdown table is not a guard; validate it in `defaultConfig()` / `validate(config)` and reject out-of-range values at the boundary. For contrast, the same estimator is **not** safe at \(d \gtrsim 40\) with \(n = 80\).
 
 ### 7.10 Cost
 
@@ -985,7 +1074,7 @@ Score 1–5. **Value** = unique insight from a *control*. **Cost** = new math UI
 | **2** | Overfitting (capped) | 5 | 2 | P0 | Reuses dataset + Chebyshev + ErrorChart + ModelExplorer. The live degree slider is the only product delta vs a static U-curve. **Must ship the cap** or it inherits P3. |
 | **3** | Gradient descent | 5 | 3 | P0 | Highest aha-per-pixel after lab 1: α_crit is *exact* for this quadratic. Needs a new contour primitive (the only pricey UI). Feature-scale slider is the static-figure killer. |
 | **4** | Activations | 4 | 2 | P1 | Cheap, precise φ/φ'. Depth slider on log |δ| is unique. Unlocks any later net content. GELU/erf is the only fuzzy bit. |
-| **5** | Ridge path | 4 | 2 | P1 | Almost free once λ is a solver argument. Directly teaches the knob the current engine hides as `RIDGE=1e-10`. Natural sequel to overfitting. |
+| **5** | Ridge path | 4 | 2 | P1 | Almost free once λ is a solver argument. Directly teaches the knob the current engine hides as `RIDGE` (**[CORRECTED]** `1e-8`, relative to the mean Gram diagonal). Natural sequel to overfitting. |
 | **6** | Bias–variance | 4 | 3 | P2 | The spaghetti plot is irreplaceable. Finite-M honesty is easy to get wrong (hence later). Batch, not live. |
 | **7** | Logistic boundary | 4 | 3 | P2 | Opens classification. Separation-at-infinity is the aha. New color semantics, click-to-label UI, α_crit not inherited from lab 2. |
 | — | Momentum GD | 3 | 3 | later | Do not ship a wrong (α,β) stability cartoon. |
@@ -1022,7 +1111,7 @@ Double descent becomes the first registered batch experiment, not a special page
 | PRNG, Gaussian, shuffle | `random.ts` | none |
 | Split | `dataset.ts` `trainTestSplit` | parameterize `trueFunction` |
 | Chebyshev + predict | `regression.ts` | none |
-| OLS / ridge | `linalg.ts` `minNormLeastSquares` | **λ argument**; keep default 1e-10 |
+| OLS / ridge | `linalg.ts` `minNormLeastSquares` | **[CORRECTED 2026-08-28]** **λ argument — still not implemented; still required.** The default is **not** `1e-10`: the engine applies `RIDGE = 1e-8` × mean Gram diagonal (relative). The new argument must state in its type/JSDoc whether it is **absolute** or **relative**, and the UI must display the same kind it passes. Decide before writing the slider (§4.3) |
 | MSE, gap | `metrics.ts` | add RMSE, MAE, R², log-loss (clipped), `isFiniteModel` |
 | Guards | missing | `assertFinite(θ, yhat, metrics)` used by every lab |
 | Eigen 2×2 | not extracted | tiny helper for GD α_crit (do not run Jacobi on 2×2) |
@@ -1072,8 +1161,8 @@ Acceptance tests (extend `scripts/selfcheck.ts` / future Vitest), one per lab, s
 | Lab | Must assert |
 | --- | --- |
 | 1 | Recover (0.8, 0.15) at σ=0; reject identical x |
-| 2 | H_{22}=2; seed-42 α_crit in a measured band; α = 2 α_crit diverges (L grows) |
-| 3 | σ=0, d=3 recovers Chebyshev [0, 0.2, 0, 0.7]; d=12 test MSE > d=3 test MSE on the golden seed **or** the lab shows `unclear`, never a fake U |
+| 2 | **[VERIFIED — shippable verbatim]** H_{22}=2 (measured exactly 2.0000); seed-42 α_crit ∈ (0.7, 1.3) (measured 0.99503); at s=10, α_crit ≈ 0.0203 so the default α=0.2 diverges (L grows) |
+| 3 | **[VERIFIED]** σ=0, d=3 recovers Chebyshev [0, 0.2, 0, 0.7] exactly; d=12 test MSE > d=3 test MSE on the golden seed **or** the lab shows `unclear`, never a fake U. **Add:** assert the reported best-degree copy is a *plateau* statement at the defaults (argmin is 4, not 3), and assert `maxDegree ≤ 12` is rejected in `validate`, not merely documented |
 | 4 | stable σ(±1000) finite; ReLU all-dead ⇒ δ=0; sigmoid L=1, z=0, w=1 ⇒ φ'=0.25 |
 | 5 | λ→∞ ⇒ ‖θ‖→0 |
 | 6 | d=0 variance < d=12 variance on golden seed |
@@ -1099,20 +1188,22 @@ Fifth: **logistic separation** — not a bug if labeled divergence; a bug if it 
 
 Items a math reviewer or implementer must close before the corresponding lab is marked correct. None of these are licensed to be “fudged in the UI.”
 
-1. **Root cause of the existing high-degree blow-up** (audit §3.3) — still open; this spec only avoids it with a cap.
-2. **Whether cubic defaults (seed 42, n=50, σ=0.25, d=0..12) actually produce a U-shaped test curve** with min near d=3 (§4.2, §4.7).
-3. **GD default-seed α_crit band** at s=1 (§3.6) — must be measured; the analytic ≈1 assumes \(\bar x=0\).
-4. **Noiseless scaled-feature OLS** \(w^\star \approx 0.8/s\) (§3.2) under the stated generative model.
-5. **Hessian factor** locked to this MSE (H_{22}=2). A silent switch to \(\frac1{2n}\sum r^2\) would double every α threshold (§3.4, §3.7).
-6. **Momentum stability region** — out of v1 until written exactly (§3.3, §8).
-7. **`Math.erf` / GELU** portability vs tanh approximation labeling (§5.6).
-8. **PyTorch ReLU / leaky ReLU derivative at 0** if lesson text claims a match (§5.4, §5.6).
-9. **Sigmoid chain:** do not publish \(\delta_L=(1/4)^L\) as the measured value; bound vs recurrence (§5.7).
-10. **Ridge effective df trace formula** — show it only if implemented; don’t approximate with a hand-wavy “df ≈ p / (1+λ)” (§6.4).
-11. **Bias–variance:** `M` vs `M-1`; grid-average vs arcsine-weighted average; do not equate the stacked bars to holdout test MSE (§7.4).
-12. **Logistic GD α** — cannot reuse MSE α_crit; need a documented cap or a real local Lipschitz/Hessian bound (§8.7).
-13. **DD detection constants and interpolation 1e-3 cutoff** (audit §3.3) — not used in new labs, still poison the capstone module.
-14. **Recharts vs dedicated SVG for pointer-edit** — product decision, not math, but it blocks lab 1 if ignored.
+1. **Root cause of the existing high-degree blow-up** (audit §3.3) — **partly closed, and escalated.** Conditioning is now measured (Research B §16.4, §16.5a): the driver is \(p\to n\), and the relative ridge floors \(\kappa\) at \(\approx 4.6\times10^{8}\). What remains open is the *science*: whether this estimator can produce an honest second descent. That is now a **BLOCKING** issue — see `docs/phase2-synthesis.md`. This spec still only avoids the problem with a cap.
+2. ~~**Whether cubic defaults produce a U-shaped test curve** with min near d=3~~ — **[CLOSED 2026-08-28]**. The U-shape is real (train 0.261→0.034, test up to 0.206). The min is **degree 4, not 3**, with 3/4/5 a 4.5% plateau. **New open constraint instead:** copy must report a plateau and must handle seed fragility (seed 1 shows no overfitting at all). See §4.2.
+3. ~~**GD default-seed α_crit band** at s=1~~ — **[CLOSED 2026-08-28]**. Measured 0.99503 vs analytic 0.99418. \(\bar x = 0.0548\) lifts \(\lambda_{\max}\) by 0.6%. Ship the selfcheck anyway (§3.6).
+4. ~~**Noiseless scaled-feature OLS** \(w^\star \approx 0.8/s\)~~ — **[CLOSED 2026-08-28]**. \((0.79510, 0.16319)\) at \(s=1\); \((0.07951, 0.16319)\) at \(s=10\) (§3.2).
+5. ~~**Hessian factor** locked to this MSE (H_{22}=2)~~ — **[CLOSED 2026-08-28]**. Measured \(H_{22} = 2.0000\) exactly. The warning still stands: a silent switch to \(\frac1{2n}\sum r^2\) would double every α threshold, so keep the selfcheck (§3.4, §3.7).
+6. **Momentum stability region** — **still open.** Out of v1 until written exactly (§3.3, §8).
+7. ~~**`Math.erf` / GELU** portability~~ — **[CLOSED 2026-08-28] by correction, not by verification**: `Math.erf` **does not exist in ECMAScript**. Implement erf or ship the labelled tanh approximation. Not a portability question (§5.6).
+8. ~~**PyTorch ReLU / leaky ReLU derivative at 0**~~ — **[REMOVED 2026-08-28]**. The "matches PyTorch" claims are deleted; the site states its own convention (\(\varphi'(0)=0\) for ReLU, \(1\) for leaky ReLU). Nothing to verify (§5.4, §5.6).
+9. **Sigmoid chain:** **still open as a writing rule.** Do not publish \(\delta_L=(1/4)^L\) as the measured value; bound vs recurrence (§5.7).
+10. **Ridge effective df trace formula** — **still open.** Show it only if implemented; don’t approximate with a hand-wavy “df ≈ p / (1+λ)” (§6.4).
+11. ~~**Bias–variance:** `M` vs `M-1`~~ — **[DECIDED 2026-08-28]: use \(M-1\).** \(1/M\) is biased low by 12.5% at \(M=8\). **New requirement added:** the plug-in bias estimator is biased *upward* by \(\widehat{\mathrm{Var}}/M\) and must be debiased or cross-checked against the direct estimator. Grid-average vs arcsine-weighted average is **still open**. The "not holdout test MSE" labelling rule stands (§7.4).
+12. **Logistic GD α** — **still open.** Cannot reuse MSE α_crit; need a documented cap or a real local Lipschitz/Hessian bound (§8.7).
+13. **DD detection constants and interpolation 1e-3 cutoff** — **still open and now demonstrably wrong in at least one regime.** `DD_THRESHOLDS` and `INTERPOLATION_MSE_THRESHOLD: 1e-3` are uncalibrated magic numbers; the `1e-3` cutoff is not noise-aware and misreports the interpolation threshold by 12 degrees at \(\sigma=1\). Not used in new labs; still poison the capstone module. See `docs/phase2-synthesis.md`.
+14. **Recharts vs dedicated SVG for pointer-edit** — **still open.** Product decision, not math, but it blocks lab 1 if ignored.
+15. **[NEW 2026-08-28] Student-facing λ: absolute or relative?** Must be decided and documented before the λ slider is written; the engine's λ is relative and the mean Gram diagonal moves with degree (§4.3, §11.2).
+16. **[NEW 2026-08-28] Seed fragility in the overfitting lab.** Argmin across seeds {1,7,42,99,2024} = {7,3,4,4,3}; seed 1 shows no overfitting. Analysis notes must be able to say "this sample does not show a clean sweet spot" (§4.2).
 
 ---
 

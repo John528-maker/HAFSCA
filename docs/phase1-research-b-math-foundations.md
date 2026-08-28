@@ -7,6 +7,8 @@
 **Audience:** motivated high-school / first-year undergraduate students, plus a Mathematical QA reviewer who will check every formula line by line.
 **Engine alignment:** formulas are written so they match the existing double-descent module (`src/lib/`) wherever that module already has a correct definition.
 
+> **[VERIFIED 2026-08-28]** A rigorous verification pass independently recomputed **every derivation and every worked numerical example** in §§4–15, §16.1–16.3 and §16.6–16.8. All of that mathematics is **correct** and is unchanged by this revision. The corrections applied on 2026-08-28 are confined to: one reversed word in the §15.3 heading, residual-sign consistency in §15.1/§15.6, symbol overloading in §2/§11.1, the now-stale `RIDGE` constant (§1.2, §16.5, §19), the unverifiable Vandermonde prefactor and the framing of conditioning growth (§16.4, §16.5), unverified secondary claims about KaTeX/MathJax (§18.2), and the status of §17 as a *dependency graph* rather than a shipping order. Each edit carries an inline `**[CORRECTED]**` or `**[VERIFIED 2026-08-28]**` marker.
+
 ---
 
 ## 0. How to read this document
@@ -50,7 +52,7 @@ This is what the **engine** already believes, and it is the right thing for the 
 | `src/lib/dataset.ts:5, 11` | \(y = \sin(2\pi x)\) on \(x \in [-1,1]\); \(x = \cos(\pi U)\) | Ground truth and arcsine sampling. |
 | `src/lib/metrics.ts:1-13` | MSE \(= \frac{1}{n}\sum_i (\hat y_i - y_i)^2\) | **No** \(\tfrac12\) factor. |
 | `src/lib/regression.ts:40` | `paramCount = degree + 1` | For a degree-\(d\) polynomial, \(p = d+1\). |
-| `src/lib/linalg.ts:17` | `RIDGE = 1e-10` | \(\lambda\) added **directly** to the Gram matrix, not scaled by \(n\). |
+| `src/lib/linalg.ts:19, 45-50` | `RIDGE = 1e-8` | **[CORRECTED 2026-08-28]** \(\lambda\) is **relative**: the engine adds \(\lambda=\texttt{RIDGE}\cdot\overline{\mathrm{diag}}\) to the Gram (or dual Gram) matrix, where \(\overline{\mathrm{diag}}=\mathrm{trace}(\mathbf{G})/\dim\mathbf{G}\) is the mean diagonal entry. It is therefore dimensionless in the scale of the Gram, and still **not** scaled by \(n\) on an averaged loss. The old documentation of an *absolute* \(\lambda=10^{-10}\) is obsolete everywhere it appears. |
 
 **Curriculum decision:** keep the engine’s \(\theta, n, p, X, y, \lambda\) and the engine’s MSE (factor \(1/n\), not \(1/(2n)\)). Replace the comment-style `X'` with \(X^{\top}\) in all student-facing math. Use \(d\) for polynomial degree so it is not confused with \(n\).
 
@@ -92,7 +94,11 @@ This table is the single source of truth for the website. Future lessons, quizze
 | \(\nabla J(\boldsymbol{\theta})\) | vector in \(\mathbb{R}^{p}\) | Gradient of the training loss | A partial derivative (those are scalars) |
 | \(\dfrac{\partial J}{\partial \theta_j}\) | scalar | Partial derivative of \(J\) w.r.t. one parameter | The full gradient |
 | \(\eta>0\) | scalar | Learning rate (step size) | Regularization |
-| \(\lambda\ge 0\) | scalar | Ridge coefficient as used by the engine: added to the Gram matrix | Learning rate |
+| \(\lambda\ge 0\) | scalar | Ridge coefficient. **Say which of the three meanings you mean** — see the warning under this table | Learning rate, a convexity interpolation coefficient (use \(\gamma\)), an eigenvalue (use \(\lambda_{\max}\)) |
+| \(\lambda_{\max}(\mathbf{A}),\lambda_{\min}(\mathbf{A})\) | scalar | **[CORRECTED]** Largest / smallest **eigenvalue** of a symmetric matrix. This is a *distinct reserved use* of the letter \(\lambda\); it is never the ridge coefficient. Always write the subscript and the argument | The ridge coefficient |
+| \(\gamma\in[0,1]\) | scalar | **[CORRECTED]** Convexity interpolation coefficient in the definition of a convex function (§11.1). Formerly written \(\lambda\), which collided with ridge | The ridge coefficient, the GD iteration index \(t\) |
+| \(\boldsymbol{\psi}\in\mathbb{R}^{p}\) | vector | **[CORRECTED]** A second, generic parameter vector used alongside \(\boldsymbol{\theta}\) in definitions (§11.1). Formerly \(\boldsymbol{\phi}\), which collided with the feature map | The feature map |
+| \(\phi(x)\in\mathbb{R}^{p}\) | vector-valued function | Feature map (§4.2): \(\phi(x)=(T_0(x),\ldots,T_d(x))^{\top}\) | A parameter vector |
 | \(T_k(x)\) | scalar | Chebyshev polynomial of the first kind, degree \(k\) | A matrix transpose |
 | \(\mathbf{I}_p\) | matrix | \(p\times p\) identity | — |
 | \(\mathbf{A}^{\top}\) | matrix | Transpose of \(\mathbf{A}\) | Inverse, pseudoinverse |
@@ -103,6 +109,16 @@ This table is the single source of truth for the website. Future lessons, quizze
 | \(\sigma_{\max}(\mathbf{A}),\sigma_{\min}(\mathbf{A})\) | scalar | Largest / smallest singular value | Eigenvalues, unless \(\mathbf{A}\) is SPD |
 | \(\mathbf{r}=\mathbf{X}\boldsymbol{\theta}-\mathbf{y}\) | vector | Residual = **prediction minus target** (matches `metrics.ts`) | Target minus prediction |
 | \(t\) | integer | Iteration index | A data point |
+
+> ### ⚠ **[CORRECTED 2026-08-28] \(\lambda\) now has THREE possible meanings in this project. This is a shipped-bug risk, not a stylistic nit.**
+>
+> Any document, lesson, UI label, function argument or code comment that writes \(\lambda\) **must** say which of these it means:
+>
+> 1. **Absolute-on-Gram.** \(\lambda\) added directly to \(\mathbf{X}^{\top}\mathbf{X}\) (or \(\mathbf{X}\mathbf{X}^{\top}\)), as in the textbook objective \(\lVert\mathbf{X}\boldsymbol{\theta}-\mathbf{y}\rVert_2^2+\lambda\lVert\boldsymbol{\theta}\rVert_2^2\). This is what §15.3 and §15.4C derive.
+> 2. **\(n\lambda\)-on-averaged-loss.** \(\lambda\) attached to the *averaged* loss \(J(\boldsymbol{\theta})+\lambda\lVert\boldsymbol{\theta}\rVert_2^2\), which produces \((\mathbf{X}^{\top}\mathbf{X}+n\lambda\mathbf{I})\boldsymbol{\theta}=\mathbf{X}^{\top}\mathbf{y}\). Differs from (1) by a factor of \(n\).
+> 3. **Relative-to-Gram-diagonal (what the engine now actually runs).** \(\lambda_{\text{applied}} = \texttt{RIDGE}\cdot\overline{\mathrm{diag}}(\mathbf{G})\) with `RIDGE = 1e-8` (`src/lib/linalg.ts:19, 45-50`). The applied \(\lambda\) therefore *changes with the problem*: the mean Gram diagonal was measured at \(\approx 41\) at \(p=41\) and \(\approx 2.3\) at \(p=161\).
+>
+> Consequence: a student-facing “\(\lambda\)” slider over absolute values and the engine’s internal \(\lambda\) are **different numbers**, off by the mean Gram diagonal. Whether the exposed control is absolute or relative must be **decided and written down before anyone builds it** (see Research C §4.3 / §11.2).
 
 ### 2.3 Loss convention (important, because textbooks disagree)
 
@@ -124,7 +140,9 @@ $$
 \min_{\boldsymbol{\theta}}\ \lVert\mathbf{X}\boldsymbol{\theta}-\mathbf{y}\rVert_{2}^{2}+\lambda\lVert\boldsymbol{\theta}\rVert_{2}^{2},
 $$
 
-i.e. \(\lambda\) is added to \(\mathbf{X}^{\top}\mathbf{X}\) or \(\mathbf{X}\mathbf{X}^{\top}\) exactly as in `linalg.ts`. If a future lesson writes ridge on the *averaged* loss \(J(\boldsymbol{\theta})+\lambda\lVert\boldsymbol{\theta}\rVert_{2}^{2}\), the linear system becomes \((\mathbf{X}^{\top}\mathbf{X}+n\lambda\mathbf{I})\boldsymbol{\theta}=\mathbf{X}^{\top}\mathbf{y}\). Those two \(\lambda\)s are not the same number. Say which one you mean.
+i.e. \(\lambda\) is added to \(\mathbf{X}^{\top}\mathbf{X}\) or \(\mathbf{X}\mathbf{X}^{\top}\). If a future lesson writes ridge on the *averaged* loss \(J(\boldsymbol{\theta})+\lambda\lVert\boldsymbol{\theta}\rVert_{2}^{2}\), the linear system becomes \((\mathbf{X}^{\top}\mathbf{X}+n\lambda\mathbf{I})\boldsymbol{\theta}=\mathbf{X}^{\top}\mathbf{y}\). Those two \(\lambda\)s are not the same number. Say which one you mean.
+
+**[CORRECTED 2026-08-28]** And note that `linalg.ts` no longer implements either of those literally: it applies \(\lambda=\texttt{RIDGE}\cdot\overline{\mathrm{diag}}(\mathbf{G})\), a **third** convention. See the warning box in §2.2. Whenever this document writes “as in `linalg.ts`,” read it as “absolute-on-Gram, with the absolute value supplied by the relative rule.”
 
 ### 2.4 What we will not use
 
@@ -764,11 +782,13 @@ possibly with constraints. A point \(\boldsymbol{\theta}^{\star}\) is a **global
 
 A **critical point** satisfies \(\nabla J(\boldsymbol{\theta})=\mathbf{0}\) (or fails to exist). For a differentiable function, every interior local minimizer is critical. The converse is false: critical points can be maxima or saddles.
 
-A function is **convex** if for all \(\boldsymbol{\theta},\boldsymbol{\phi}\) and \(\lambda\in[0,1]\),
+A function is **convex** if for all \(\boldsymbol{\theta},\boldsymbol{\psi}\) and \(\gamma\in[0,1]\),
 
 $$
-J\bigl(\lambda\boldsymbol{\theta}+(1-\lambda)\boldsymbol{\phi}\bigr)\le\lambda J(\boldsymbol{\theta})+(1-\lambda)J(\boldsymbol{\phi}).
+J\bigl(\gamma\boldsymbol{\theta}+(1-\gamma)\boldsymbol{\psi}\bigr)\le \gamma\,J(\boldsymbol{\theta})+(1-\gamma)J(\boldsymbol{\psi}).
 $$
+
+**[CORRECTED 2026-08-28]** This statement previously used \(\lambda\) for the interpolation coefficient and \(\boldsymbol{\phi}\) for the second parameter vector. Both collided with reserved symbols (\(\lambda\) = ridge coefficient / eigenvalue; \(\phi\) = the feature map of §4.2), so they are now \(\gamma\) and \(\boldsymbol{\psi}\). \(t\) was not used here because it is reserved for the gradient-descent iteration index.
 
 For a differentiable convex function, every critical point is a global minimizer. MSE in \(\boldsymbol{\theta}\) for a model that is linear in \(\boldsymbol{\theta}\) is convex, because its Hessian \(\frac{2}{n}\mathbf{X}^{\top}\mathbf{X}\) is positive semidefinite (\(\mathbf{v}^{\top}\mathbf{X}^{\top}\mathbf{X}\mathbf{v}=\lVert\mathbf{X}\mathbf{v}\rVert_{2}^{2}\ge 0\)). Neural nets are in general **not** convex.
 
@@ -1012,7 +1032,7 @@ $$
 \mathbf{X}^{\top}\mathbf{X}\,\boldsymbol{\theta}=\mathbf{X}^{\top}\mathbf{y}.
 $$
 
-They are “normal” because the residual \(\mathbf{y}-\mathbf{X}\boldsymbol{\theta}^{\star}\) is orthogonal (normal) to the column space of \(\mathbf{X}\): \(\mathbf{X}^{\top}(\mathbf{y}-\mathbf{X}\boldsymbol{\theta}^{\star})=\mathbf{0}\).
+They are “normal” because the residual \(\mathbf{r}=\mathbf{X}\boldsymbol{\theta}^{\star}-\mathbf{y}\) is orthogonal (normal) to the column space of \(\mathbf{X}\): \(\mathbf{X}^{\top}(\mathbf{X}\boldsymbol{\theta}^{\star}-\mathbf{y})=\mathbf{0}\). **[CORRECTED 2026-08-28]** — this line previously wrote \(\mathbf{y}-\mathbf{X}\boldsymbol{\theta}^{\star}\), violating the residual convention declared in §2.2 (\(\mathbf{r}=\) prediction minus target). Orthogonality is sign-invariant, so no number changes; only the expression does.
 
 ### 15.2 Notation
 
@@ -1022,7 +1042,7 @@ They are “normal” because the residual \(\mathbf{y}-\mathbf{X}\boldsymbol{\t
 
 ### 15.3 Formula
 
-**Underdetermined / tall case** (\(p\le n\), columns independent):
+**Overdetermined / tall case** (\(p\le n\), columns independent) — **[CORRECTED 2026-08-28]**, this heading previously said “Underdetermined,” which is backwards: a tall \(n\times p\) matrix with \(p\le n\) gives *more equations than unknowns*, i.e. the **overdetermined** case. The formula below was and is correct:
 
 $$
 \boldsymbol{\theta}^{\star}=(\mathbf{X}^{\top}\mathbf{X})^{-1}\mathbf{X}^{\top}\mathbf{y}.
@@ -1171,20 +1191,26 @@ $$
 
 Predictions: \(\frac23+\frac12=\frac76\), \(\frac23+1=\frac53\), \(\frac23+\frac32=\frac{13}{6}\).
 
-Residuals: \(1-\frac76=-\frac16\), \(2-\frac53=\frac13\), \(2-\frac{13}{6}=-\frac16\).
+Residuals, in this document’s convention \(r_i=\hat y_i-y_i\) (**prediction minus target**, §2.2):
 
-SSE \(=\bigl(-\frac16\bigr)^{2}+\bigl(\frac13\bigr)^{2}+\bigl(-\frac16\bigr)^{2}=\frac{1+4+1}{36}=\frac16\).
+$$
+r_1=\frac76-1=\frac16,\qquad r_2=\frac53-2=-\frac13,\qquad r_3=\frac{13}{6}-2=\frac16.
+$$
+
+**[CORRECTED 2026-08-28]** — these were previously written \(1-\frac76=-\frac16\), \(2-\frac53=\frac13\), \(2-\frac{13}{6}=-\frac16\), i.e. \(y-\hat y\), the opposite of the convention declared in §2.2. SSE, MSE and the orthogonality check below are all sign-invariant, so **no numeric result changes** — only the signs and the expressions.
+
+SSE \(=\bigl(\frac16\bigr)^{2}+\bigl(-\frac13\bigr)^{2}+\bigl(\frac16\bigr)^{2}=\frac{1+4+1}{36}=\frac16\).
 
 MSE \(J=\frac{1}{3}\cdot\frac16=\frac{1}{18}\).
 
 Orthogonality check: \(\mathbf{X}^{\top}\mathbf{r}\) should be \(\mathbf{0}\).
 
 $$
-\sum_i r_i= -\frac16+\frac13-\frac16=0,
+\sum_i r_i= \frac16-\frac13+\frac16=0,
 $$
 
 $$
-\sum_i x_i r_i=1\cdot\bigl(-\tfrac16\bigr)+2\cdot\tfrac13+3\cdot\bigl(-\tfrac16\bigr)=-\tfrac16+\tfrac46-\tfrac36=0.
+\sum_i x_i r_i=1\cdot\tfrac16+2\cdot\bigl(-\tfrac13\bigr)+3\cdot\tfrac16=\tfrac16-\tfrac46+\tfrac36=0.
 $$
 
 Plug \(\boldsymbol{\theta}\) back into the normal equations: \(3\cdot\frac23+6\cdot\frac12=2+3=5\), \(6\cdot\frac23+14\cdot\frac12=4+7=11\). Matches \(\mathbf{X}^{\top}\mathbf{y}\).
@@ -1262,7 +1288,18 @@ $$
 
 On a bounded interval, these columns become nearly linearly dependent as \(d\) grows: \(x^{d}\) and \(x^{d+1}\) look alike (especially if the \(x_i\) cluster), and high powers collapse toward \(0\) on \((-1,1)\). The matrix is classically ill-conditioned.
 
-It is a standard theorem that for real nodes on \([-1,1]\), \(\kappa_2(V)\) grows **at least exponentially** in the degree (Beckermann, *Numer. Math.* 2000; Pan, *SIAM J. Matrix Anal. Appl.* 2016). A commonly quoted lower bound is on the order of \((1+\sqrt{2})^{d}\). `NEEDS VERIFICATION` — I am confident of exponential growth; I am **not** staking a review on a specific prefactor without copying it from a primary theorem statement.
+It is a standard theorem that for real nodes on \([-1,1]\), \(\kappa_2(V)\) grows **at least exponentially** in the degree (Beckermann, *Numer. Math.* 2000; Pan, *SIAM J. Matrix Anal. Appl.* 2016).
+
+**[CORRECTED 2026-08-28] — measurement replaces the secondhand constant.** This section previously quoted a specific exponential prefactor from secondary discussion. That citation is removed. In its place, here is what was actually **measured on this repo**, using this repo’s arcsine nodes and a monomial design matrix:
+
+| degree \(d\) | measured \(\kappa(\mathbf{X})\), monomial basis, arcsine nodes |
+| --- | --- |
+| 5 | \(4.6\times10^{1}\) |
+| 10 | \(3.7\times10^{3}\) |
+| 15 | \(3.0\times10^{5}\) |
+| 20 | \(3.1\times10^{7}\) |
+
+That is a clean exponential: \(\log_{10}\kappa\) rises by \(0.389\) per degree, i.e. a factor of \(10^{0.389}\approx 2.45\) per degree. This **matches \((1+\sqrt2)=2.414\) to measurement accuracy** — so the classical growth rate is reproduced here as an observation on our own data rather than asserted from a constant we could not check against a primary theorem statement. Use the measurement, not the citation, when writing lesson copy.
 
 Consequence for OLS: even if you could store \(\boldsymbol{\theta}\) exactly, mapping targets to **monomial** coefficients is an exponentially sensitive map. Computed coefficients become enormous and wildly wrong; evaluating the polynomial can still sometimes look acceptable (backward error versus forward error — Shen & Serkh, *SIAM J. Numer. Anal.* 2023). For an education site that *plots* the fitted curve and reports MSE, huge wrong coefficients plus evaluation outside the sample set produce the “blow up” students see.
 
@@ -1302,7 +1339,20 @@ Limits of the argument (honest):
 - The samples are random, not exact Chebyshev nodes, so orthogonality is approximate.
 - Once \(p>n\), the \(n\times p\) matrix **cannot** have orthogonal columns (too many columns). The dual matrix \(\mathbf{K}=\mathbf{X}\mathbf{X}^{\top}\) can still be ill-conditioned.
 - Forming Gram matrices still squares \(\kappa\).
-- The engine’s \(\lambda=10^{-10}\) is tiny compared with float64 and compared with \(\mathrm{trace}(\mathbf{K})\) at large \(p\). Phase 0 observed test MSE \(\sim 10^{6}\) at high degree on the default run — a numerical explosion, not a second descent.
+- **[CORRECTED 2026-08-28]** The engine’s ridge is no longer the absolute \(\lambda=10^{-10}\) this section used to describe. It is `RIDGE = 1e-8` **multiplied by the mean diagonal of the Gram matrix** (`src/lib/linalg.ts:19, 45-50`) — a relative, dimensionless ridge. With that ridge, the high-degree blow-up on the old defaults peaks at test MSE \(6.1\times10^{4}\), **not** the \(\sim10^{6}\) previously recorded from Phase 0. One and a half orders of magnitude smaller, and still a numerical explosion rather than a second descent.
+
+#### 16.5a **[VERIFIED 2026-08-28]** What conditioning actually does on this repo, and what the relative ridge does about it
+
+The earlier framing of this section — “Chebyshev + arcsine keeps \(\kappa\) tame for moderate \(d\), then it grows” — was directionally right but named the wrong driver. Measured:
+
+- **\(\kappa\) for Chebyshev + arcsine is essentially flat**, between roughly **1.5 and 3**, all the way up to \(d\approx 20\). There is no exponential regime there at all. Contrast the monomial table in §16.4, which is already at \(3.1\times10^{7}\) by \(d=20\).
+- Past that, \(\kappa\) **accelerates far faster than any fixed exponential**. The driver is **\(p\to n\)** — the design matrix becoming square on random nodes — **not the basis**. Attributing the late blow-up to “high-degree polynomials being ill-conditioned” is the wrong lesson; the right lesson is that you are running out of samples.
+- Beyond \(d\approx 78\), the smallest Gram eigenvalue **computes as \(\approx -10^{-15}\)**: negative, i.e. below the float64 resolution of \(\lambda_{\max}\approx 188\). Condition numbers printed in that regime are **not meaningful digits** and must never be quoted to a student as measurements.
+- The relative ridge **floors** the condition number at
+  $$
+  \kappa \;\approx\; \frac{\lambda_{\max}}{\texttt{RIDGE}\cdot\overline{\mathrm{diag}}}\;\approx\;4.6\times10^{8}\qquad\text{for all }d\ge 78 .
+  $$
+  **That single number is the entire mechanism of the fix.** The knob controlling that ceiling is \(1/\texttt{RIDGE}\): raise `RIDGE` and the ceiling falls proportionally; lower it and the ceiling rises until float64 noise is back in the answer.
 
 ### 16.6 Derivation of the \(\infty\)-norm condition-number example
 
@@ -1348,11 +1398,15 @@ A relative change in \(\mathbf{b}\) of \(0.001/2.001\approx 5\times 10^{-4}\) pr
 
 This is the numerical backbone of the existing double-descent module, and the likely reason the default run’s test-error “second descent” is a lie (Phase 0, P2–P3). Training loops that solve linear systems (least squares, Newton, some kernel methods) inherit \(\kappa\). Training loops that use GD inherit a related fact: the **condition number of the Hessian** \(\kappa(\mathbf{X}^{\top}\mathbf{X})=\kappa(\mathbf{X})^{2}\) controls how small \(\eta\) must be and how many steps you need. Ill-conditioned features make GD crawl as well as making linear solvers explode.
 
-`NEEDS VERIFICATION` — I have **not** measured \(\kappa(\mathbf{X})\) or \(\kappa(\mathbf{X}\mathbf{X}^{\top})\) versus degree on this repo’s Chebyshev + arcsine + \(\lambda=10^{-10}\) path. Phase 0 already flagged the root cause of the high-degree blow-up as unconfirmed (too-small ridge vs undetected rank deficiency vs GE error). This section explains the *mechanism* that makes such a blow-up possible; it does not claim which mechanism is the one in `linalg.ts`.
+**[VERIFIED 2026-08-28]** — \(\kappa\) versus degree **has now been measured** on this repo’s Chebyshev + arcsine + relative-ridge path; see §16.4 (monomial contrast) and §16.5a (Chebyshev + arcsine flat to \(d\approx20\); \(p\to n\) as the driver; ridge-imposed ceiling \(\approx 4.6\times10^{8}\); float64 resolution exhausted beyond \(d\approx78\)). The former `NEEDS VERIFICATION` on this point is closed.
+
+What remains open is **not** conditioning but the science: whether this estimator can produce an honest second descent at all. That question is unresolved and is tracked in `docs/phase2-synthesis.md` as a **blocking** issue. No lesson prose about double descent may be authored until it is settled.
 
 ---
 
-## 17. Prerequisite dependency graph (text)
+## 17. Mathematical dependency graph (text)
+
+> **[CORRECTED 2026-08-28] This section is a prerequisite chain, not a shipping order.** It records which piece of mathematics must be understood before which other piece. It is **not** the curriculum order and must not be used as one. **Research D §1.2 is authoritative for curriculum order**, and it deliberately differs (for example, it delays calculus until a loss exists to minimize, and it inserts polynomial regression early as the complexity knob). Where this section and Research D §1.2 disagree, Research D wins.
 
 Read top-down. An arrow `A -> B` means “A is required before B.”
 
@@ -1388,7 +1442,7 @@ Optimization
   -> “GD vs normal equations are two solvers for the same J”
 ```
 
-**Suggested lesson order for the curriculum**
+**A topological order of the graph above** — **[CORRECTED]** this list was previously headed “Suggested lesson order for the curriculum,” which conflicted with Research D. It is one valid linearization of the *mathematical* dependencies, useful for checking that no lesson uses an object it has not defined. **It is not the shipping order; see Research D §1.2.**
 
 1. Function (model as \(f_{\boldsymbol{\theta}}\))
 2. Vectors
@@ -1402,11 +1456,25 @@ Optimization
 10. Normal equations (same problem, closed form)
 11. Conditioning, then the existing polynomial / double-descent lab as the payoff
 
-The current site *starts* at step 11’s lab with no rendering and no prior chain. The chain above is what must become explicit.
+The current site *starts* at step 11’s lab with no rendering and no prior chain. The chain above is what must become explicit — but the sequence in which lessons are **written and shipped** is Research D §1.2 and §6.5, not this list.
 
 ---
 
 ## 18. Recommended LaTeX rendering approach
+
+> ### ✅ **[VERIFIED 2026-08-28] This section’s core recommendation is CONFIRMED by a real spike in this repo.**
+>
+> MDX + `remark-math` + `rehype-katex` with `output: "htmlAndMathml"` **builds and statically prerenders on Next 16.3.3 with Turbopack.** Measured results:
+>
+> - **Client-JS delta for an MDX route: 0 bytes.**
+> - `katex.min.js` appears in **no client chunk**.
+> - MathML **is present** in the emitted HTML.
+> - Plugins **must** be named as **strings**. Turbopack cannot serialize JS functions to Rust, so a plugin passed as a function fails.
+> - **`src/mdx-components.tsx` is mandatory** — the build requires it.
+>
+> Resolved versions in the spike: `@next/mdx` **16.3.3**, `@mdx-js/loader` **3.1.1**, `@mdx-js/react` **3.1.1**, `remark-math` **6.0.0**, `rehype-katex` **7.0.1**, `katex` **0.18.4**.
+>
+> Configure `rehype-katex` with **`strict: true, throwOnError: true`**. This is a deliberate *accuracy* safeguard, not a style preference: malformed TeX **fails the build** instead of silently rendering wrong mathematics on a page whose whole value proposition is being correct.
 
 ### 18.1 Recommendation
 
@@ -1414,10 +1482,10 @@ The current site *starts* at step 11’s lab with no rendering and no prior chai
 
 Concretely, when someone implements this (not in this research task):
 
-1. Depend on `katex` (current npm release as of 2026-08-10: **0.18.4**).
+1. Depend on `katex` **0.18.4** (the version resolved by the confirming spike).
 2. Import `katex/dist/katex.min.css` **once** from the root layout (fonts + CSS only).
 3. For TSX lesson content, a **Server Component** that calls `katex.renderToString(tex, { displayMode, output: "htmlAndMathml", throwOnError: true })` and injects the HTML. KaTeX is synchronous and runs in Node; this is the documented SSR path.
-4. For future MDX lessons (Phase 0 Stage 4), use `remark-math` + `rehype-katex` via `@next/mdx`. **Next.js 16’s official MDX guide uses `rehype-katex` as the example plugin.** Under Turbopack (the Next 16 default for both `dev` and `build`), plugin names must be **strings** with JSON-serializable options, e.g. `rehypePlugins: [['rehype-katex', { output: 'htmlAndMathml', throwOnError: true }]]`. Do not pass plugin *functions*, and do not configure MDX through a `webpack` key — Next 16 ignores webpack unless Turbopack is opted out.
+4. For future MDX lessons (Phase 0 Stage 4), use `remark-math` + `rehype-katex` via `@next/mdx`. **Next.js 16’s official MDX guide uses `rehype-katex` as the example plugin, in exactly the string form** `['rehype-katex', { strict: true, throwOnError: true }]`. Under Turbopack (the Next 16 default for both `dev` and `build`), plugin names must be **strings** with JSON-serializable options, e.g. `rehypePlugins: [['rehype-katex', { output: 'htmlAndMathml', strict: true, throwOnError: true }]]`. Do not pass plugin *functions* (Turbopack cannot pass JS functions to Rust), and do not configure MDX through a `webpack` key — Next 16 ignores webpack unless Turbopack is opted out. **[VERIFIED 2026-08-28]** — this whole pipeline was built and prerendered successfully in this repo; see the box above. `src/mdx-components.tsx` is required.
 5. Keep client-side KaTeX for a later, optional island (e.g. a sandbox where a student types TeX). Curriculum pages do not need it.
 
 ### 18.2 Why KaTeX, not MathJax
@@ -1426,7 +1494,7 @@ Concretely, when someone implements this (not in this research task):
 | --- | --- | --- |
 | Server / build-time HTML | First-class (`renderToString`) | Possible but heavier |
 | Client JS if SSR’d | **None** for the math itself | Typically a large runtime |
-| Approximate extra weight if client-rendered | `katex.min.js` ~277 kB + CSS ~24 kB + fonts (often cited ~350 kB total) | Combined TeX components are much larger; a11y explorer adds more |
+| Approximate extra weight if client-rendered | Non-trivial: script + CSS + fonts. **[CORRECTED 2026-08-28]** specific byte figures previously quoted here were never measured and have been removed. What *was* measured in this repo: SSR’d MDX math adds **0 bytes** of client JS, so this row is an argument against client rendering, not a number to cite | Larger still; a11y explorer adds more. **[CORRECTED]** the MathJax comparison figures previously in this cell were never checked and are removed |
 | Speed / layout shift | Synchronous; no reflow dance | Historically slower; v3 closed some of the gap |
 | LaTeX coverage | Subset (enough for this curriculum: `aligned`, `pmatrix`, `\frac`, `\partial`, `\nabla`, `\sum`, `\mathbf`, `\mathbb`, `\ell`, `\lVert`) | Broader |
 | Accessibility | Default `htmlAndMathml`: visual HTML plus hidden MathML for AT | Richer: speech-rule engine, explorer, braille; assistive MathML |
@@ -1462,14 +1530,15 @@ Do **not** use `react-katex` / `katex-react` for lesson pages: those are client 
 | “Parameters” = degree + 1 | \(p=d+1\) |
 | Interpolation near degree \(n-1\) | near \(p=n\), i.e. degree \(d=n-1\) |
 | Comment `X'` | \(\mathbf{X}^{\top}\) |
-| `RIDGE` | \(\lambda=10^{-10}\) on the Gram matrix (engine), not on averaged \(J\) |
+| `RIDGE` | **[CORRECTED 2026-08-28]** \(\lambda=\texttt{RIDGE}\cdot\overline{\mathrm{diag}}(\mathbf{G})\) with `RIDGE` \(=10^{-8}\) — a **relative** ridge on the Gram matrix (engine, `src/lib/linalg.ts:19, 45-50`), not an absolute \(10^{-10}\) and not on averaged \(J\). If a lesson exposes \(\lambda\) to a student, state whether the displayed number is absolute or relative (§2.2 warning) |
 
 ---
 
 ## 20. Items marked NEEDS VERIFICATION
 
-1. **Exact exponential prefactor** for \(\kappa_2\) of a real Vandermonde matrix on \([-1,1]\) as a function of degree. Qualitative exponential growth: confident (Beckermann 2000; Pan 2016). Specific constants such as \(\sqrt{2}(1+\sqrt{2})^{d-1}/\sqrt{d+1}\): quoted from secondary discussion of Shen & Serkh (2023), not copied from a theorem line in the PDF. Treat any exact prefactor as unverified until a reviewer checks the primary statement.
-2. **Measured \(\kappa(\mathbf{X})\) and \(\kappa(\mathbf{X}\mathbf{X}^{\top})\) versus degree** for *this* engine (Chebyshev features, arcsine samples, \(\lambda=10^{-10}\), Gaussian elimination). Not computed in this research pass (no experiment runs by instruction). This is the same open question as Phase 0 §3.3: ridge vs ill-conditioning vs GE as the cause of the default-run blow-up.
+1. ~~**Exact exponential prefactor** for \(\kappa_2\) of a real Vandermonde matrix~~ — **[CLOSED 2026-08-28]**. The secondhand prefactor has been **removed from §16.4** rather than verified. It is replaced by a direct measurement on this repo’s arcsine nodes: \(\log_{10}\kappa\) grows by \(0.389\) per degree (factor \(2.45\)), which matches \((1+\sqrt2)\) to measurement accuracy. Cite the measurement, not a constant.
+2. ~~**Measured \(\kappa(\mathbf{X})\) and \(\kappa(\mathbf{X}\mathbf{X}^{\top})\) versus degree**~~ — **[CLOSED 2026-08-28]**. Measured; see §16.4 and §16.5a. Chebyshev + arcsine \(\kappa\in[1.5,3]\) to \(d\approx20\); acceleration past that is driven by \(p\to n\), not the basis; float64 resolution exhausted beyond \(d\approx78\); relative ridge floors \(\kappa\) at \(\approx4.6\times10^{8}\).
+   **Still open, and now the blocking item:** whether this estimator can produce an honest second descent (`secondMin < firstMin`). See `docs/phase2-synthesis.md`.
 3. **Screen-reader quality** of KaTeX `htmlAndMathml` on the actual lesson pages (NVDA, JAWS, VoiceOver, and Korean vs English). Recommendation is from documentation, not from an AT test of this app.
 4. **Completeness of KaTeX 0.18** for any TeX we add later that is not in the subset used here (`aligned`, `cases`, `pmatrix`, standard operators). The formulas in this file are inside KaTeX’s well-supported core. Numbered `\begin{align}` environments and exotic packages are not.
 
@@ -1483,6 +1552,7 @@ Nothing else in the numbered formulas is tagged. If a reviewer disagrees with an
 - Least squares / min-norm / push-through: standard identities; dual form as implemented in `linalg.ts` and as in e.g. Cornell CS6210 notes (min-norm \(\mathbf{A}^{\top}(\mathbf{A}\mathbf{A}^{\top})^{-1}\mathbf{b}\)); ridge equivalence checked algebraically and with a \(3\times 2\) numerical probe.
 - Chebyshev orthogonality: standard; weight \((1-x^{2})^{-1/2}\), norms \(\pi\) and \(\pi/2\).
 - Vandermonde ill-conditioning: Beckermann, *Numer. Math.* 85 (2000); Pan, *SIMAX* 37 (2016); Shen & Serkh, *SIAM J. Numer. Anal.* (2023), arXiv:2212.10519.
-- KaTeX options: https://katex.org/docs/options.html (`htmlAndMathml` default). npm `katex@0.18.4` (updated 2026-08-10).
-- Next.js 16 MDX + Turbopack string plugins, including a `rehype-katex` example: https://nextjs.org/docs/app/guides/mdx
+- KaTeX options: https://katex.org/docs/options.html (`htmlAndMathml` default). `katex@0.18.4` — **[VERIFIED 2026-08-28]** this is the version actually resolved by the confirming spike in this repo, not a release-date claim.
+- Next.js 16 MDX + Turbopack string plugins, including a `rehype-katex` example in the literal form `['rehype-katex', { strict: true, throwOnError: true }]`: `node_modules/next/dist/docs/01-app/02-guides/mdx.md`. The same page states that plugins without serializable options cannot be used with Turbopack, because JS functions cannot be passed to Rust.
+- **[VERIFIED 2026-08-28]** MDX/KaTeX spike in this repo: builds and statically prerenders on Next 16.3.3 + Turbopack; 0 bytes client-JS delta; no `katex.min.js` in any client chunk; MathML present.
 - Worked-example arithmetic: recomputed with Node before writing Section 4–16 numbers.

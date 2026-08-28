@@ -35,7 +35,13 @@ Every node exists because the previous node creates a problem the next node solv
 
 That last point is the load-bearing ordering decision. The live experiment is polynomial regression, not a neural net. Putting neural networks and backpropagation *before* generalization would force every visitor through material the flagship lab does not use, and would strand the existing module as an unexplained appendix.
 
-### 1.2 Canonical node list (16 lessons)
+### 1.2 Canonical node list (18 lessons)
+
+> ### 📌 **[VERIFIED 2026-08-28] THIS SECTION IS AUTHORITATIVE FOR CURRICULUM ORDER.**
+>
+> Research B §17 has been **demoted** to a *mathematical dependency graph* — a statement of which piece of mathematics presupposes which, useful for checking that no lesson uses an undefined object. It is **not** a shipping order and B now says so explicitly. Where B §17's linearization and this section disagree, **this section wins.**
+>
+> **[CORRECTED 2026-08-28] Two nodes were missing and have been added: `normal-equations` and `conditioning`.** Research B correctly identifies both as load-bearing, and the omission of `conditioning` was significant: conditioning is the *actual explanation* of the flagship module's behaviour, so without it the capstone lesson has no mechanism to offer, only a phenomenon. They are inserted at 9a and 13a below to avoid renumbering this document mid-audit; when `curriculum.ts` is written, renumber `order` to a contiguous 1…18 in the sequence shown.
 
 IDs are URL slugs. Difficulty: `intro` | `core` | `advanced`. Times are wall-clock estimates for a motivated high-school / early-undergrad student following the eight-stage lesson template, including the experiment when one exists. They are planning numbers, not measurements.
 
@@ -54,15 +60,34 @@ IDs are URL slugs. Difficulty: `intro` | `core` | `advanced`. Times are wall-clo
 | 7 | `gradient` | The gradient | core | 40 | yes | `partial-derivative` | `gradient-descent`, `backpropagation` |
 | 8 | `gradient-descent` | Gradient descent | core | 50 | yes | `gradient` | `optimization`, `neural-network` |
 | 9 | `optimization` | Optimization landscapes | core | 40 | yes | `gradient-descent` | — (enriches NN; not a hard gate) |
+| **9a** | `normal-equations` | **[ADDED]** Normal equations: the same problem, solved in closed form | core | 35 | yes | `optimization`, `polynomial-regression` | `conditioning` |
 | 10 | `generalization` | Train, test, and generalization | intro | 35 | yes | `loss-function` | `overfitting` |
 | 11 | `overfitting` | Overfitting and underfitting | core | 40 | yes | `polynomial-regression`, `generalization` | `regularization`, `interpolation-threshold`, `neural-network` (recommended) |
 | 12 | `regularization` | Regularization | core | 40 | yes | `overfitting` | — (recommended before double descent) |
 | 13 | `interpolation-threshold` | Interpolation threshold | core | 30 | yes | `overfitting` | `double-descent` |
-| 14 | `double-descent` | Double descent | advanced | 50 | yes | `interpolation-threshold` | — (capstone of the complexity arc) |
+| **13a** | `conditioning` | **[ADDED]** Conditioning: why a correct formula can still explode | advanced | 35 | yes | `normal-equations`, `interpolation-threshold` | `double-descent` |
+| 14 | `double-descent` | Double descent | advanced | 50 | yes | `interpolation-threshold`, `conditioning` | — (capstone of the complexity arc) |
 | 15 | `neural-network` | Neural networks | advanced | 55 | yes | `gradient-descent` | `backpropagation` |
 | 16 | `backpropagation` | Backpropagation | advanced | 55 | yes | `neural-network`, `gradient` | — |
 
-**Existing module placement:** `double-descent` is node 14 of 16 — near the **end** of the complexity/generalization arc, and *before* neural nets. The three current concept cards map onto nodes 11, 13, and 14. The current `ExperimentWorkspace` is the Experiment stage of node 14, and is reused (with different framing and default configs) as the experiment of nodes 4, 11, 12, and 13. See §1.6 for the “only content is the last lesson” problem.
+**[CORRECTED 2026-08-28] Why the two new nodes sit where they do.**
+
+- **`normal-equations` (9a).** It is placed immediately after `optimization` because that is the first point at which the student has everything the derivation needs: a loss, a gradient, and the idea that "minimize" means "set the gradient to zero." It is placed *after* `polynomial-regression` rather than before because polynomial regression is where the student first meets a design matrix with more than two columns. Its job is the contrast Research B §11.7 names: **gradient descent and the normal equations are two solvers for the same \(J\)** — and the shipped engine uses the second one. Without this node, every experiment in the generalize-act is powered by a solver the course never explained. Hard prerequisites: `optimization`, `polynomial-regression`.
+- **`conditioning` (13a).** It is placed between `interpolation-threshold` and `double-descent` because that is exactly where the student first sees numbers that a mathematically correct formula cannot justify. **This is the actual explanation of the flagship module's behaviour** (Research B §16, §16.5a): \(\kappa\) is flat for Chebyshev + arcsine to \(d\approx20\), then accelerates as \(p\to n\); the relative ridge floors it at \(\approx4.6\times10^{8}\); beyond \(d\approx78\) the printed condition numbers are not meaningful digits. A `double-descent` lesson that cannot say which part of the curve is physics and which part is float64 is not honest. Hard prerequisites: `normal-equations`, `interpolation-threshold`. It is `advanced` and sits on the `rigorous` and `double-descent` paths; the `intuition` path may take it with `mathematics` / `derivation` hidden.
+
+**Existing module placement:** `double-descent` is node 14 of 16 — near the **end** of the complexity/generalization arc, and *before* neural nets. The three current concept cards map onto nodes 11, 13, and 14. The current `ExperimentWorkspace` is the Experiment stage of node 14.
+
+> ### ⚠ **[CORRECTED 2026-08-28] The reuse plan for nodes 4, 11 and 12 must change. "Same sweep, different framing, hide the DD verdict" is not sufficient.**
+>
+> This document proposed reusing the double-descent sweep for nodes 4 (`polynomial-regression`), 11 (`overfitting`) and 12 (`regularization`) with a different framing and the DD verdict hidden. **The framing is not the problem — the curve is.** At the old defaults the shipped sweep still peaks at **\(6.1\times10^{4}\) test MSE**. Hiding the verdict on a chart that climbs five orders of magnitude teaches a beginner that overfitting means numerical detonation. It does not.
+>
+> **Nodes 4, 11 and 12 must instead use Research C's capped cubic experiment definition** (C §4.2): a **different ground truth** (\(f(x)=0.2T_1(x)+0.7T_3(x)\)), a **hard degree cap of 12**, enforced in code, and **no `analyzeDoubleDescent` call at all**. That is a distinct experiment definition, not a re-skinned DD config.
+>
+> **Node 13 (`interpolation-threshold`) may keep the DD workspace** — interpolation is genuinely what that sweep is about — subject to §5.2's blocking fix. Node 13a (`conditioning`) also uses the DD workspace, since the ill-conditioning it explains only appears there. Node 14 keeps it by definition.
+>
+> Practical consequence for the schema: nodes 4/11/12 point at a **different `experimentId`** from nodes 13/13a/14. See §3.3 gap (a).
+
+See §1.6 for the “only content is the last lesson” problem.
 
 Polynomial regression is **not** in the prompt’s topic list. It is added on purpose: it is the concrete model class of the shipped lab, it is the cleanest place to introduce “complexity” as a knob, and it lets overfitting / interpolation / double descent be *seen* rather than described.
 
@@ -125,11 +150,16 @@ gradient                 → gradient-descent
 gradient                 → backpropagation
 gradient-descent         → optimization
 gradient-descent         → neural-network
+optimization             → normal-equations        // [ADDED 2026-08-28]
+polynomial-regression    → normal-equations        // [ADDED 2026-08-28]
 polynomial-regression    → overfitting
 generalization           → overfitting
 overfitting              → regularization
 overfitting              → interpolation-threshold
+normal-equations         → conditioning            // [ADDED 2026-08-28]
+interpolation-threshold  → conditioning            // [ADDED 2026-08-28]
 interpolation-threshold  → double-descent
+conditioning             → double-descent          // [ADDED 2026-08-28]
 neural-network           → backpropagation
 ```
 
@@ -141,7 +171,7 @@ overfitting     ⇢ neural-network
 optimization    ⇢ neural-network
 ```
 
-**Cycle check.** Every hard edge points to a strictly higher canonical index except `gradient → backpropagation` (7 → 16) and `gradient-descent → neural-network` (8 → 15), which skip forward, and none point backward. A topological order exists and equals the canonical numbering 1…16. Therefore the hard-prerequisite graph is a DAG.
+**Cycle check.** Every hard edge points to a strictly higher canonical index except `gradient → backpropagation` (7 → 16) and `gradient-descent → neural-network` (8 → 15), which skip forward, and none point backward. **[VERIFIED 2026-08-28]** the two added nodes preserve this: `normal-equations` (9a) has prerequisites at 9 and 4, `conditioning` (13a) has prerequisites at 9a and 13, and both of `conditioning`'s dependents are at 14. A topological order exists and equals the canonical numbering 1…9, 9a, 10…13, 13a, 14…16. Therefore the hard-prerequisite graph is still a DAG.
 
 In-code enforcement (migration stage, not now): a `selfcheck` (or later Vitest) assertion that (a) every `prerequisites` slug exists, (b) Kahn’s algorithm succeeds, (c) no node lists itself.
 
@@ -181,16 +211,18 @@ functions-and-parameters
 → gradient
 → gradient-descent
 → optimization
+→ normal-equations          // [ADDED 2026-08-28]
 → generalization
 → overfitting
 → regularization
 → interpolation-threshold
+→ conditioning              // [ADDED 2026-08-28]
 → double-descent
 → neural-network
 → backpropagation
 ```
 
-Estimated **~10–12 hours**. Prev/next is this sequence. Soft edges are included (regularization before double descent; optimization before neural nets).
+Estimated **~11–13 hours** (**[CORRECTED]** raised from ~10–12 by the two added nodes, 35 min each). Prev/next is this sequence. Soft edges are included (regularization before double descent; optimization before neural nets).
 
 ### 2.2 Path `intuition` — math-light, experiment-heavy
 
@@ -226,7 +258,7 @@ polynomial-regression     // complexity knob; 15–20 min, not the full L04 if a
 → double-descent
 ```
 
-Optional sidebar, not in prev/next: `regularization`.
+Optional sidebar, not in prev/next: `regularization`. **[ADDED 2026-08-28]** `conditioning` (13a) is also a sidebar on this path rather than a required step — a targeted visitor should not be blocked by it, but the `double-descent` lesson must be able to link to it the moment the curve does something float64 is responsible for.
 
 This path is valid on the DAG: `polynomial-regression` has a hard prereq of `linear-regression`, which has a hard prereq of `functions-and-parameters`. For this path we **warn, do not block**, and inject a 5-minute “what is a model / what is a line / what is MSE” callout at the top of `polynomial-regression` when `activePathId === "double-descent"`. Estimated **~2.5–3.5 hours**, or ~50 minutes if they skip straight to L14 and only read the briefing.
 
@@ -312,6 +344,14 @@ interface LessonMeta {
   estimatedMinutes: number;
   hasExperiment: boolean;
   experimentId?: string; // key into ExperimentDefinition registry
+  /**
+   * [ADDED 2026-08-28] Per-lesson override of the experiment's defaultConfig().
+   * Closes schema gap (a): see the note below this block.
+   * `LessonMeta` is not generic, so the registry either parameterizes it as
+   * LessonMeta<TConfig> or stores this as an unknown-shaped record that the
+   * experiment definition validates. Do not let it be `any`.
+   */
+  experimentConfig?: Partial<TConfig>;
   prerequisites: string[]; // hard slugs
   recommendedPrerequisites: string[]; // soft slugs
   unlocks: string[]; // hard dependents (denormalized; generate from prereqs)
@@ -381,6 +421,19 @@ interface ChromeDict {
 }
 ```
 
+> ### **[CORRECTED 2026-08-28] Two `LessonMeta` / `ExperimentDefinition` schema gaps, now closed.**
+>
+> The two abstractions are otherwise **compatible**, and one design decision here is actively right and should be preserved: this document keeps `doubleDescentStatus` **off** `Lesson` and **on** the experiment result, which is exactly what Research C wants. Two gaps remained.
+>
+> **(a) A lesson cannot override the experiment's default config.** This document says the workspace is reused with different default configs, but `LessonMeta` carried only a single `experimentId` and no override, while in Research C §11.1 `defaultConfig()` belongs to the *definition*, not the lesson. There are two ways to close this:
+>
+> - register **distinct definition ids** (one per configuration), or
+> - add an **override field** on `LessonMeta`.
+>
+> **Recommendation: the override field.** `experimentConfig?: Partial<TConfig>` has been added to `LessonMeta` above. It keeps one definition per *algorithm* rather than one per *lesson*, so the acceptance tests, guards and analysis predicates are written and verified once. Distinct ids are still the right call when the lesson needs a genuinely different **definition** — different ground truth, different guards, no `analyzeDoubleDescent`. Per §1.2, nodes 4/11/12 are exactly that case and get their **own definition id** (Research C's capped cubic), while `experimentConfig` handles the remaining per-lesson tuning.
+>
+> **(b) Locale must be passed into the experiment island explicitly.** Research C's contract is `analyze(result, locale) → string[]`, but this document resolves locale from the URL and server-renders prose. Written down explicitly so it cannot be missed: **the experiment client island receives `lang` as a prop** from the server component that renders it. It must not re-derive locale from context, `localStorage`, or a second provider. Without this, the audit's existing defect — *analysis notes computed twice, one copy in the wrong language* — is recreated inside the new abstraction, which is a worse outcome than leaving it where it is, because it would then be structural.
+
 **Bilingual rule:** every `Localized<T>` field and every MDX body has both `en` and `ko`. A build-time check fails if a slug exists in one locale and not the other, or if stage files are missing. Interpolated strings (today’s `(deg, nTrain) => …` functions in `i18n.ts`) become either MDX components that take props, or chrome-dictionary functions kept in a small typed TS module — JSON cannot hold functions.
 
 **Embedded math:** MDX + `remark-math` / `rehype-katex` (or equivalent). Display math belongs in `mathematics` and `derivation`; `intuition` should prefer pictures and numbers.
@@ -419,13 +472,19 @@ src/content/
     …
 ```
 
-The lesson page (`app/[lang]/learn/[slug]/page.tsx`) `await`s `params`, looks up `LessonMeta` by slug, dynamically imports `content/lessons/${slug}/${lang}.mdx`, and passes experiment ids into the MDX. `generateStaticParams` returns the cartesian product `{ lang, slug }` from the registry. `dynamicParams = false` so unknown slugs 404 (pattern from Next 16 MDX guide, `mdx.md` “Using dynamic imports”).
+The lesson page (`app/[lang]/learn/[slug]/page.tsx`) `await`s `params`, looks up `LessonMeta` by slug, dynamically imports the locale MDX body, and passes experiment ids into the MDX. **[VERIFIED 2026-08-28]** — the spike that proved this works used the **locale-first** layout ``@/content/${lang}/${slug}.mdx``, not the slug-first `content/lessons/${slug}/${lang}.mdx` drawn in the tree above. Either shape can work, but only the locale-first one has actually been built and prerendered; prefer it unless there is a reason not to, and re-spike if you change it. `generateStaticParams` returns the cartesian product `{ lang, slug }` from the registry. `dynamicParams = false` so unknown slugs 404 (pattern from Next 16 MDX guide, `mdx.md` “Using dynamic imports”).
 
-**Fallback if MDX is blocked:** structured TS per lesson (`en.ts` / `ko.ts` exporting stage markdown strings) plus a small markdown renderer and a `<Experiment>` slot. Worse authoring, fully type-safe, no new bundler plugin. Use this only if option D fails the Turbopack check below.
+**Fallback if MDX is blocked:** structured TS per lesson (`en.ts` / `ko.ts` exporting stage markdown strings) plus a small markdown renderer and a `<Experiment>` slot. Worse authoring, fully type-safe, no new bundler plugin. **[RESOLVED 2026-08-28] — not needed.** Option D passed the Turbopack check (see the box below). This paragraph is retained as a record of the alternative considered, **not** as a live plan.
 
-**NEEDS VERIFICATION** — `@next/mdx` + `@mdx-js/loader` is documented against `next.config.mjs` in a webpack-shaped example (`node_modules/next/dist/docs/01-app/02-guides/mdx.md`). Next 16 defaults to **Turbopack** for `next dev` and `next build` (audit §1.2). Whether that MDX plugin works under Turbopack 16.3.3, and whether `remark-math` / `rehype-katex` compose with it, has not been tried in this repo. This is the first spike of Stage 4.
-
-**NEEDS VERIFICATION** — dynamic `import(\`@/content/lessons/${slug}/${lang}.mdx\`)` requires the bundler to see a constrained module glob. If Turbopack cannot resolve that pattern, prerender a static map `Record<slug, Record<Locale, () => Promise<MDXModule>>>` in `curriculum.ts` instead.
+> ### ✅ **[RESOLVED 2026-08-28] The three MDX risks (registered as D5, D6, D7) are closed. The premise behind D5 was wrong.**
+>
+> **D5 / D6 — `@next/mdx` under Turbopack, and `remark-math` / `rehype-katex` composing with it.** The premise that the Next docs example is "webpack-shaped" is **incorrect**. `node_modules/next/dist/docs/01-app/02-guides/mdx.md` documents the **Turbopack-compatible string-plugin form literally**, as `['rehype-katex', { strict: true, throwOnError: true }]`, and states that plugins without serializable options cannot be used with Turbopack **because JS functions cannot be passed to Rust**. A real spike then confirmed the pipeline end to end: it **builds and statically prerenders on Next 16.3.3 with Turbopack**, the measured **client-JS delta for an MDX route is 0 bytes**, `katex.min.js` appears in **no client chunk**, and **MathML is present** in the HTML.
+>
+> Two non-negotiables fell out of the spike: plugins **must** be named as **strings**, and **`src/mdx-components.tsx` is mandatory**. Resolved versions: `@next/mdx` 16.3.3, `@mdx-js/loader` 3.1.1, `@mdx-js/react` 3.1.1, `remark-math` 6.0.0, `rehype-katex` 7.0.1, `katex` 0.18.4. Keep `strict: true, throwOnError: true` as a deliberate accuracy safeguard: malformed TeX fails the build rather than silently rendering wrong mathematics.
+>
+> **D7 — dynamic MDX import by slug — is also resolved, positively.** ``await import(`@/content/${lang}/${slug}.mdx`)`` **works**, combined with a finite `generateStaticParams`, `dynamicParams = false`, and locale/slug allowlists. Both locale files were discovered and prerendered. **The static import map fallback is not needed** and should not be built.
+>
+> Consequence for §3.4's recommendation: option **D (hybrid)** stands, and the "**Fallback if MDX is blocked**" paragraph below is now dead weight — keep it only as a record of what was considered, not as a live plan.
 
 ### 3.5 Locale strategy for content (not just chrome)
 
@@ -599,7 +658,7 @@ The eight-stage template is the same idea inside one lesson: name it, feel it, w
 | L05 → L06 → L07 | 1D slope → “hold the others fixed” → a vector. This is the steepest *math* climb in the course. | Stay in a 2-parameter linear model (`w`, `b`) with a contour plot. Never introduce ∇ on an n-D net first. L07’s experiment is arrows on that contour, not a 100-D diagram. |
 | L07 → L08 | From “the arrow exists” to “we walk.” Learning rate is a new free parameter that can diverge. | Animate a few steps by hand (student clicks “step”) before autoplay. Show one explosion from a large rate on purpose. |
 | L04 / L10 → L11 | Complexity + generalization together produce the U-shape. Either idea alone is easy; the conjunction is the first *ML* idea, not a math idea. | Reuse the polynomial sweep with the DD verdict **hidden**. Ask the student to find the degree where test error is best. Then name overfitting. |
-| L11 → L13 | “Perfect training fit” is not the same as “too complex.” Interpolation is a threshold, not a vibe. | Use the existing interpolation hint (`degree ≈ nTrain − 1`) as a prediction the student checks. Audit P7 (hint vs. detected threshold disagreeing) **must be fixed before this lesson ships** or the scaffold teaches a contradiction. |
+| L11 → L13 | “Perfect training fit” is not the same as “too complex.” Interpolation is a threshold, not a vibe. | Use the existing interpolation hint (`degree ≈ nTrain − 1`) as a prediction the student checks. Audit P7 (hint vs. detected threshold disagreeing) **must be fixed before this lesson ships** or the scaffold teaches a contradiction. **[VERIFIED 2026-08-28] — this row is correct, and the defect is measurably worse than this document knew.** The detector's fixed `1e-3` train-MSE cutoff is **not noise-aware**: at \(\sigma=1\), train MSE at \(p=n\) is **0.207** and never crosses `1e-3` until **degree 51**, against a theoretical threshold of **39** — the reported "interpolation threshold" is off by **12 degrees**. And the previously celebrated agreement at "threshold = 79 = \(n-1\)" is a **knife-edge crossing** of an arbitrary constant: train MSE is \(1.51\times10^{-3}\) at \(d=78\) and \(6.93\times10^{-4}\) at \(d=79\), whereas genuine interpolation would be \(\sim10^{-16}\). The ridge is damping interpolation, so that agreement confirms the ridge helped — it does **not** calibrate the cutoff. Full evidence in `docs/phase2-synthesis.md`. |
 | L13 → L14 | Double descent refutes the story L11 just installed. If L11 was shaky, L14 reads as noise or as a bug — which, given audit P2/P3, it currently *is*. | Do not author L14 prose until Stage 2 science fixes land. On the page: classical U, then interpolation peak, then “watch the overparameterized regime; the lab will not claim a second descent unless the curve shows one.” |
 | L14 → L15 | New model class. Biggest conceptual jump after calculus. | One hidden layer, two inputs, ReLU or tanh, drawn as stacked linear regressions plus a bend. No CNNs, no framework APIs. Tie back: overparameterization is the same word they used in L14. |
 | L15 → L16 | Chain rule stacked through layers. | Start from L05’s 1D chain, then one hidden unit, then a vector. Students on `intuition` never hit this cliff. |
@@ -666,11 +725,11 @@ Preserve `ai-research-lab.locale` reads for one release so existing visitors kee
 
 Order of *writing* content is not the canonical learning order. Write next what the engine already supports:
 
-1. `interpolation-threshold` (L13) — same sweep, different framing; depends on P7 fix.
-2. `overfitting` (L11) — same sweep, hide DD verdict.
-3. `polynomial-regression` (L04) — same sweep, look at fitted curves.
+1. `interpolation-threshold` (L13) — same sweep, different framing; depends on the P7 fix, which §5.2 now shows is worse than described (the `1e-3` cutoff is not noise-aware).
+2. `overfitting` (L11) — **[CORRECTED 2026-08-28]** **not** "same sweep, hide DD verdict." Use Research C's capped cubic experiment definition: different ground truth, hard degree cap of 12 enforced in code, **no `analyzeDoubleDescent` call**. See §1.2.
+3. `polynomial-regression` (L04) — **[CORRECTED 2026-08-28]** likewise the capped cubic definition, looking at fitted curves. Not the DD sweep.
 4. `generalization` (L10) — train vs test split, already in the UI.
-5. `regularization` (L12) — needs a ridge (or similar) *knob* exposed; the engine already applies `RIDGE = 1e-10`. **NEEDS VERIFICATION** whether exposing ridge as a student control still produces a defensible interpolation / DD story (audit §3.3 open questions).
+5. `regularization` (L12) — **[CORRECTED 2026-08-28]** likewise the capped cubic definition, not the DD sweep. Needs a ridge *knob* exposed. The engine applies **`RIDGE = 1e-8` multiplied by the mean Gram diagonal** (`src/lib/linalg.ts:19, 45-50`) — a **relative** ridge, not the absolute `1e-10` recorded here before. **STILL OPEN, and now with a second question in front of it:** (i) whether the student-facing λ is **absolute or relative** must be decided and documented before the control is built (the mean Gram diagonal was measured at ≈41 at \(p=41\) and ≈2.3 at \(p=161\), so the two differ by a factor that moves as the student drags degree); and (ii) whether exposing ridge still produces a defensible interpolation / DD story remains unverified (audit §3.3; `docs/phase2-synthesis.md`).
 6. Then L01–L03 (cheap prose + small new islands: residual plot, MSE as a number).
 7. Then L05–L09 (new visualization islands; no dependence on the polynomial engine).
 8. L15–L16 last — new engine, after the `ExperimentDefinition` abstraction exists (audit Stage 3 / R1).
@@ -706,24 +765,29 @@ Collected so implementation spikes can be ticketed without rereading the prose.
 2. **Audience calculus background** — inferred, not taken from a syllabus (§1.2). If wrong, L05–L07 duration and the viability of path `intuition` change.
 3. **Intuition path without calculus** — may produce a cargo-cult reading of double descent (§2.2).
 4. **Eight-stage template as established pedagogy** — design hypothesis, not a cited empirical result (§5.1).
-5. **`@next/mdx` under Turbopack 16.3.3** — docs example is webpack-shaped; not tried here (§3.4).
-6. **`remark-math` / `rehype-katex` composition with that MDX plugin** (§3.4).
-7. **Dynamic MDX `import(\`…${slug}/${lang}.mdx\`)` resolvable by Turbopack** — may need a static import map (§3.4).
+5. ~~**`@next/mdx` under Turbopack 16.3.3** — docs example is webpack-shaped~~ — **[RESOLVED 2026-08-28]**. **The premise was wrong:** `node_modules/next/dist/docs/01-app/02-guides/mdx.md` documents the Turbopack string-plugin form literally. A real spike builds and statically prerenders on Next 16.3.3 + Turbopack. Plugins must be strings; `src/mdx-components.tsx` is mandatory (§3.4).
+6. ~~**`remark-math` / `rehype-katex` composition**~~ — **[RESOLVED 2026-08-28]**. Composes. Measured **0 bytes** client-JS delta for an MDX route; no `katex.min.js` in any client chunk; MathML present. Versions: `@next/mdx` 16.3.3, `@mdx-js/loader` / `@mdx-js/react` 3.1.1, `remark-math` 6.0.0, `rehype-katex` 7.0.1, `katex` 0.18.4. Use `strict: true, throwOnError: true` (§3.4).
+7. ~~**Dynamic MDX import by slug** — may need a static import map~~ — **[RESOLVED 2026-08-28], positively**. ``await import(`@/content/${lang}/${slug}.mdx`)`` works with finite `generateStaticParams`, `dynamicParams = false`, and locale/slug allowlists; both locale files were discovered and prerendered. **The static import map is not needed** (§3.4).
 8. **Deployment target** — Node (`proxy.ts`, config redirects) vs. static host (no proxy) (§3.5). `output: 'export'` is currently unset.
 9. **`PageProps<'/…'>` availability** until `next typegen` / `next dev` has seen the new routes (§4.1).
 10. **Hash scrolling onto a newly navigated prerendered lesson** with Next 16 `data-scroll-behavior` (§4.1).
 11. **`localStorage` quota / private mode** with both history and progress keys (§4.6).
 12. **Cookie vs. `localStorage` vs. URL locale** on first request without `proxy.ts` (§6.4).
-13. **Exposing ridge as a student control** for L12 without destroying the interpolation / DD story (§6.5), plus the still-open audit questions: whether this estimator can produce a genuine second descent at all, and the root cause of the high-degree test-error blow-up.
+13. **Exposing ridge as a student control** for L12 (§6.5) — **still open, and split in two.** (a) **Absolute vs relative λ** in the student-facing control must be decided and documented before the slider is written; the engine's ridge is relative (`RIDGE = 1e-8` × mean Gram diagonal). (b) Whether exposing ridge still leaves a defensible interpolation / DD story. The root cause of the high-degree blow-up is now largely **understood** (conditioning; \(p \to n\); see Research B §16.5a), but **whether this estimator can produce a genuine second descent remains OPEN and is BLOCKING** — see `docs/phase2-synthesis.md`. No L14 prose may be authored until it is settled.
 14. **Next 16 `proxy.ts` + static prerender** — documented for i18n redirects; interaction with a fully static `generateStaticParams` locale tree is not verified in this repo (§3.5).
+15. **[ADDED 2026-08-28] Uncalibrated detector constants.** `DD_THRESHOLDS` (`CLEAR_RISE`, `CLEAR_DROP`, `RISE`, `DROP`, `COMPETITIVE_SECOND_MIN: 2`, `DIVERGENCE_RISE: 100`) and `INTERPOLATION_MSE_THRESHOLD: 1e-3` are hand-picked magic numbers, now demonstrably wrong in at least one regime. This is a first-class engineering task, not a documentation nit (§5.2).
+16. **[ADDED 2026-08-28] Locale must be a prop on the experiment island.** Research C's `analyze(result, locale)` takes a locale; this document resolves locale from the URL. The island receives `lang` as a prop — see §3.3 gap (b) — or the "analysis notes computed twice, one in the wrong language" defect is rebuilt inside the new abstraction.
+17. **[ADDED 2026-08-28] Renumber `order` to a contiguous 1…18** when `curriculum.ts` is authored, following the sequence in §1.2 including nodes 9a (`normal-equations`) and 13a (`conditioning`). Path membership for the two new nodes must be set at the same time.
 
 ---
 
 ## 8. Summary of recommendations
 
-- **Graph:** 16-node DAG, calculus *after* a working loss, generalization *before* neural nets, polynomial regression inserted as the complexity knob, double descent at node 14 as capstone of the generalize-act. Soft-prereq regularization; no cycles on hard edges.
-- **Paths:** `rigorous` (all 16), `intuition` (skip L05–L09 and L15–L16), `double-descent` (L04→L10→L11→L13→L14 with warnings), `optimization` (fit/train track).
-- **Content:** hybrid registry (TS) + MDX bodies (per locale) + JSON chrome. Server-rendered lessons, client experiment islands. Fallback: typed TS stage strings if MDX/Turbopack fails.
+- **Graph:** **[CORRECTED 2026-08-28]** **18-node** DAG (adds `normal-equations` at 9a and `conditioning` at 13a), calculus *after* a working loss, generalization *before* neural nets, polynomial regression inserted as the complexity knob, double descent at node 14 as capstone of the generalize-act. Soft-prereq regularization; no cycles on hard edges. **§1.2 is authoritative for curriculum order** (Research B §17 is a math dependency graph, not a shipping order).
+- **Paths:** `rigorous` (all 18), `intuition` (skip L05–L09 and L15–L16), `double-descent` (L04→L10→L11→L13→L14 with warnings, `conditioning` as a sidebar), `optimization` (fit/train track).
+- **Content:** hybrid registry (TS) + MDX bodies (per locale) + JSON chrome. Server-rendered lessons, client experiment islands (which **receive `lang` as a prop**). **[RESOLVED]** the MDX/Turbopack/KaTeX pipeline is confirmed by a real spike; the typed-TS fallback is not needed.
+- **Experiment reuse:** **[CORRECTED]** nodes 4/11/12 use Research C's **capped cubic** definition (hard degree cap of 12, enforced in code, no `analyzeDoubleDescent`), **not** a re-skinned double-descent config. Nodes 13/13a/14 keep the DD workspace.
+- **Blocking:** no `double-descent` prose may be authored, and no lesson may promise a second descent, until the central scientific question is settled. See `docs/phase2-synthesis.md`.
 - **Routes:** `/{lang}/learn/{slug}` with awaited `params`, `generateStaticParams`, `generateMetadata`, warn-don’t-gate, versioned validated progress, lobby resume.
 - **Tension:** lobby with two CTAs + briefing on L14 + migrate the workspace to its canonical lesson URL; never hard-block the lab.
 - **Migration:** registry → one lesson route → lobby → locale prefix → author backward from the lab → progress last.
