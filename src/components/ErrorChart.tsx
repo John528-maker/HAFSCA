@@ -38,8 +38,10 @@ export default function ErrorChart({
         degree: r.degree,
         trainMSE: clampForLog(r.trainMSE, logScale),
         testMSE: clampForLog(r.testMSE, logScale),
+        noisyTestMSE: clampForLog(r.noisyTestMSE, logScale),
         trainRaw: r.trainMSE,
         testRaw: r.testMSE,
+        noisyTestRaw: r.noisyTestMSE,
       })),
     [results, logScale],
   );
@@ -123,12 +125,18 @@ export default function ErrorChart({
             <Tooltip
               formatter={(value, name, item) => {
                 const payload = item?.payload as
-                  | { trainRaw?: number; testRaw?: number }
+                  | {
+                      trainRaw?: number;
+                      testRaw?: number;
+                      noisyTestRaw?: number;
+                    }
                   | undefined;
                 const raw =
                   name === c.trainError
                     ? payload?.trainRaw
-                    : payload?.testRaw;
+                    : name === c.noisyTestError
+                      ? payload?.noisyTestRaw
+                      : payload?.testRaw;
                 return [
                   typeof raw === "number" ? raw.toExponential(3) : String(value),
                   String(name),
@@ -165,6 +173,17 @@ export default function ErrorChart({
               dataKey="testMSE"
               name={c.testError}
               stroke="#dc2626"
+              dot={{ r: 2 }}
+              activeDot={{ r: 5 }}
+              strokeWidth={2}
+              isAnimationActive={false}
+            />
+            <Line
+              type="monotone"
+              dataKey="noisyTestMSE"
+              name={c.noisyTestError}
+              stroke="#c2410c"
+              strokeDasharray="5 4"
               dot={{ r: 2 }}
               activeDot={{ r: 5 }}
               strokeWidth={2}

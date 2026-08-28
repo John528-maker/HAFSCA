@@ -1,9 +1,11 @@
 export type DoubleDescentVerdict =
-  | "Clear Double Descent"
-  | "Possible Double Descent"
-  | "No Clear Double Descent"
+  | "True Double Descent"
+  | "Competitive Second Descent"
+  | "Partial Recovery"
+  | "Variance Peak Without Recovery"
+  | "No Second Descent Observed"
   | "Sweep Range Exhausted"
-  | "Numerical Divergence";
+  | "Numerical Failure";
 
 export interface ExperimentConfig {
   datasetSize: number;
@@ -28,7 +30,12 @@ export interface ModelResult {
   degree: number;
   paramCount: number;
   trainMSE: number;
+  /** Primary test metric: prediction error against the noise-free true function. */
   testMSE: number;
+  /** Secondary real-world view: prediction error against noisy held-out labels. */
+  noisyTestMSE: number;
+  /** Upper bound for κ of the regularized Gram system used by the solve. */
+  conditionNumberUpperBound: number;
   generalizationGap: number;
   coefficients: number[];
 }
@@ -42,6 +49,7 @@ export interface ExperimentSummaryData {
   bestComplexity: number;
   minTrainError: number;
   minTestError: number;
+  minNoisyTestError: number;
   interpolationThreshold: number | null;
   doubleDescentStatus: DoubleDescentVerdict;
   thresholdBeyondSweep: boolean;

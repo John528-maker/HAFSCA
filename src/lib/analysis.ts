@@ -19,14 +19,14 @@ export const DD_THRESHOLDS = {
    */
   COMPETITIVE_SECOND_MIN: 2,
   /**
-   * The measured interpolation spikes were 10^5–10^6 MSE while first minima
-   * were 0.03–0.25. A still-noncompetitive 100× rise is conservatively called
-   * numerical blow-up rather than double descent.
+   * Standard forward-error analysis bounds relative solve error by κ·ε.
+   * At 1e-2, fewer than about two decimal digits remain trustworthy, which is
+   * the numerical-failure boundary. Large MSE alone is never a failure signal.
    */
-  DIVERGENCE_RISE: 100,
+  MAX_FORWARD_ERROR_BOUND: 1e-2,
   /**
    * With 10 test points, 22/24 seeds received a DD verdict; at 160 points that
-   * fell to 8/24. Below 160, a single run is too noisy for a "Clear" claim.
+   * fell to 8/24. Below 160, a single run is too noisy for a True verdict.
    */
   MIN_RELIABLE_TEST_SIZE: 160,
 } as const;
@@ -64,18 +64,32 @@ interface CurvePoint {
 
 /**
  * Detect the classical U → peak → second descent pattern on the test-error curve.
- * Separates a numerical blow-up from an observed or absent double descent.
+ * Detection uses truth-target test MSE. This matches the 24-seed calibration,
+ * removes the additive noise-variance pedestal, and measures recovery toward f.
  */
 export function analyzeDoubleDescent(
   results: ModelResult[],
   testSize = Number.POSITIVE_INFINITY,
   interpolationDegree?: number,
 ): DoubleDescentVerdict {
-  if (results.length < 8) return "No Clear Double Descent";
+  if (results.length < 8) return "No Second Descent Observed";
 
   const raw = results.map((r) => r.testMSE);
-  if (raw.some((value) => !Number.isFinite(value))) {
-    return "Numerical Divergence";
+  const hasNonFinite = results.some(
+    (result) =>
+      !Number.isFinite(result.trainMSE) ||
+      !Number.isFinite(result.testMSE) ||
+      !Number.isFinite(result.noisyTestMSE) ||
+      !Number.isFinite(result.conditionNumberUpperBound) ||
+      result.coefficients.some((value) => !Number.isFinite(value)),
+  );
+  const hasInsufficientPrecision = results.some(
+    (result) =>
+      result.conditionNumberUpperBound * Number.EPSILON >=
+      DD_THRESHOLDS.MAX_FORWARD_ERROR_BOUND,
+  );
+  if (hasNonFinite || hasInsufficientPrecision) {
+    return "Numerical Failure";
   }
   const smoothed = smooth(raw, DD_THRESHOLDS.SMOOTH_WINDOW);
 
@@ -136,8 +150,10 @@ export function analyzeDoubleDescent(
       peak = { index: best, degree: results[best]!.degree, value: smoothed[best]! };
     }
   }
-  if (!peak || peak.value <= firstMin.value) return "No Clear Double Descent";
+  if (!peak || peak.value <= firstMin.value) return "No Second Descent Observed";
   const rise = peak.value / Math.max(firstMin.value, 1e-12);
+  const hasVisibleRise = rise >= DD_THRESHOLDS.MIN_VISIBLE_RISE;
+  if (!hasVisibleRise) return "No Second Descent Observed";
 
   // 3. Subsequent minimum after the peak.
   let secondMin: CurvePoint | null = null;
@@ -157,9 +173,7 @@ export function analyzeDoubleDescent(
     secondMin = { index: best, degree: results[best]!.degree, value: smoothed[best]! };
   }
   if (!secondMin || secondMin.value >= peak.value) {
-    return rise >= DD_THRESHOLDS.DIVERGENCE_RISE
-      ? "Numerical Divergence"
-      : "No Clear Double Descent";
+    return "Variance Peak Without Recovery";
   }
 
   const dropRatio = secondMin.value / peak.value;
@@ -182,23 +196,21 @@ export function analyzeDoubleDescent(
     return "Sweep Range Exhausted";
   }
 
-  if (rise >= DD_THRESHOLDS.DIVERGENCE_RISE && !isCompetitive) {
-    return "Numerical Divergence";
-  }
-
   if (
     hasVisibleShape &&
     secondMin.value < firstMin.value &&
     testSize >= DD_THRESHOLDS.MIN_RELIABLE_TEST_SIZE
   ) {
-    return "Clear Double Descent";
+    return "True Double Descent";
   }
 
   if (hasVisibleShape && isCompetitive) {
-    return "Possible Double Descent";
+    return "Competitive Second Descent";
   }
 
-  return "No Clear Double Descent";
+  if (hasVisibleShape) return "Partial Recovery";
+
+  return "Variance Peak Without Recovery";
 }
 
 /**
@@ -250,16 +262,20 @@ export function buildAnalysisNotes(
     }
   }
 
-  if (verdict === "Clear Double Descent") {
-    notes.push(a.clearDoubleDescent);
-  } else if (verdict === "Possible Double Descent") {
-    notes.push(a.possibleDoubleDescent);
-  } else if (verdict === "Numerical Divergence") {
-    notes.push(a.numericalDivergence);
+  if (verdict === "True Double Descent") {
+    notes.push(a.trueDoubleDescent);
+  } else if (verdict === "Competitive Second Descent") {
+    notes.push(a.competitiveSecondDescent);
+  } else if (verdict === "Partial Recovery") {
+    notes.push(a.partialRecovery);
+  } else if (verdict === "Variance Peak Without Recovery") {
+    notes.push(a.variancePeakWithoutRecovery);
+  } else if (verdict === "Numerical Failure") {
+    notes.push(a.numericalFailure);
   } else if (verdict === "Sweep Range Exhausted") {
     notes.push(a.sweepRangeExhausted);
   } else {
-    notes.push(a.noDoubleDescent);
+    notes.push(a.noSecondDescent);
   }
 
   return notes;

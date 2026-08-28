@@ -50,6 +50,10 @@ export default function ExperimentSummary({ summary }: Props) {
           value={summary.minTestError.toExponential(3)}
         />
         <Item
+          label={s.minNoisyTest}
+          value={summary.minNoisyTestError.toExponential(3)}
+        />
+        <Item
           label={s.doubleDescent}
           value={formatVerdict(locale, summary.doubleDescentStatus)}
         />

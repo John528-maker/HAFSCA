@@ -4,7 +4,10 @@
  * (Node 24 strips TypeScript types natively — no test framework.)
  */
 import { buildDataset, trueFunction } from "../src/lib/dataset.ts";
-import { vectorNorm } from "../src/lib/linalg.ts";
+import {
+  regularizedGramConditionUpperBound,
+  vectorNorm,
+} from "../src/lib/linalg.ts";
 import { meanSquaredError } from "../src/lib/metrics.ts";
 import { fitPolynomial, predict } from "../src/lib/regression.ts";
 import {
@@ -30,6 +33,25 @@ function assert(cond: boolean, msg: string): void {
 
 function almostEqual(a: number, b: number, tol = 1e-6): boolean {
   return Math.abs(a - b) <= tol;
+}
+
+function syntheticResult(
+  degree: number,
+  trainMSE: number,
+  testMSE: number,
+  overrides: Partial<ModelResult> = {},
+): ModelResult {
+  return {
+    degree,
+    paramCount: degree + 1,
+    trainMSE,
+    testMSE,
+    noisyTestMSE: testMSE,
+    conditionNumberUpperBound: 1e9,
+    generalizationGap: testMSE - trainMSE,
+    coefficients: [],
+    ...overrides,
+  };
 }
 
 console.log("1. Exact recovery of a known linear target");
@@ -105,9 +127,9 @@ console.log("5. trueFunction sanity");
 console.log("6. findInterpolationThreshold");
 {
   const fake: ModelResult[] = [
-    { degree: 1, paramCount: 2, trainMSE: 1, testMSE: 1.1, generalizationGap: 0.1, coefficients: [] },
-    { degree: 5, paramCount: 6, trainMSE: 0.01, testMSE: 0.05, generalizationGap: 0.04, coefficients: [] },
-    { degree: 10, paramCount: 11, trainMSE: 1e-4, testMSE: 0.2, generalizationGap: 0.2, coefficients: [] },
+    syntheticResult(1, 1, 1.1),
+    syntheticResult(5, 0.01, 0.05),
+    syntheticResult(10, 1e-4, 0.2),
   ];
   assert(findInterpolationThreshold(fake, 1e-3) === 10, "threshold at degree 10");
   assert(findInterpolationThreshold(fake, 1e-6) === null, "no threshold if never crossed");
@@ -123,35 +145,27 @@ console.log("7. analyzeDoubleDescent shape detection");
     else if (d < 20) test = 0.5 + (d - 10) * 0.15; // rise to ~2.0
     else if (d < 33) test = 2.0 - (d - 20) * 0.13; // second descent to ~0.4
     else test = 0.44 + (d - 32) * 0.03; // turn upward after an interior minimum
-    return {
-      degree: d,
-      paramCount: d + 1,
-      trainMSE: Math.max(1e-6, 0.5 - d * 0.02),
-      testMSE: Math.max(0.05, test),
-      generalizationGap: 0,
-      coefficients: [],
-    };
+    return syntheticResult(
+      d,
+      Math.max(1e-6, 0.5 - d * 0.02),
+      Math.max(0.05, test),
+    );
   });
   assert(
-    analyzeDoubleDescent(clear, 460) === "Clear Double Descent",
-    `well-sampled synthetic DD is clear (got ${analyzeDoubleDescent(clear, 460)})`,
+    analyzeDoubleDescent(clear, 460) === "True Double Descent",
+    `well-sampled synthetic DD is true DD (got ${analyzeDoubleDescent(clear, 460)})`,
   );
   assert(
-    analyzeDoubleDescent(clear, 10) === "Possible Double Descent",
-    "10-point test set cannot produce a Clear verdict",
+    analyzeDoubleDescent(clear, 10) === "Competitive Second Descent",
+    "10-point test set cannot produce a True verdict",
   );
 
-  const flat: ModelResult[] = degrees.map((d) => ({
-    degree: d,
-    paramCount: d + 1,
-    trainMSE: 0.1,
-    testMSE: 0.2,
-    generalizationGap: 0.1,
-    coefficients: [],
-  }));
+  const flat: ModelResult[] = degrees.map((d) =>
+    syntheticResult(d, 0.1, 0.2),
+  );
   assert(
-    analyzeDoubleDescent(flat) === "No Clear Double Descent",
-    "flat curve → No Clear Double Descent",
+    analyzeDoubleDescent(flat) === "No Second Descent Observed",
+    "flat curve → No Second Descent Observed",
   );
 
   const truncated: ModelResult[] = degrees.map((d) => {
@@ -161,14 +175,11 @@ console.log("7. analyzeDoubleDescent shape detection");
         : d < 20
           ? 0.5 + (d - 10) * 0.15
           : 2 - (d - 20) * 0.06;
-    return {
-      degree: d,
-      paramCount: d + 1,
-      trainMSE: Math.max(1e-6, 0.5 - d * 0.02),
+    return syntheticResult(
+      d,
+      Math.max(1e-6, 0.5 - d * 0.02),
       testMSE,
-      generalizationGap: 0,
-      coefficients: [],
-    };
+    );
   });
   assert(
     analyzeDoubleDescent(truncated) === "Sweep Range Exhausted",
@@ -188,14 +199,15 @@ console.log("8. Truncated high-degree run is not double descent");
     const model = fitPolynomial(trainX, trainY, degree);
     const trainMSE = meanSquaredError(predict(model, trainX), trainY);
     const testMSE = meanSquaredError(predict(model, testX), testY);
-    return {
-      degree,
+    return syntheticResult(degree, trainMSE, testMSE, {
       paramCount: model.paramCount,
-      trainMSE,
-      testMSE,
-      generalizationGap: testMSE - trainMSE,
+      noisyTestMSE: testMSE,
+      conditionNumberUpperBound: regularizedGramConditionUpperBound(
+        trainX.length,
+        model.paramCount,
+      ),
       coefficients: model.coefficients,
-    };
+    });
   });
   const verdict = analyzeDoubleDescent(highDegreeRun);
   assert(
@@ -203,14 +215,15 @@ console.log("8. Truncated high-degree run is not double descent");
     `still-falling high-degree run → range exhausted (got ${verdict})`,
   );
   assert(
-    verdict !== "Clear Double Descent" && verdict !== "Possible Double Descent",
+    verdict !== "True Double Descent" &&
+      verdict !== "Competitive Second Descent",
     "truncated run is not classified as double descent",
   );
 }
 
-console.log("9. Numerical divergence is not double descent");
+console.log("9. Variance explosion is distinct from numerical failure");
 {
-  const divergent: ModelResult[] = Array.from({ length: 40 }, (_, index) => {
+  const partial: ModelResult[] = Array.from({ length: 40 }, (_, index) => {
     const degree = index + 1;
     const testMSE =
       degree < 10
@@ -220,18 +233,22 @@ console.log("9. Numerical divergence is not double descent");
           : degree < 31
             ? 1000 - (degree - 20) * 80
             : 200 + (degree - 30) * 10;
-    return {
-      degree,
-      paramCount: degree + 1,
-      trainMSE: 1e-6,
-      testMSE,
-      generalizationGap: testMSE,
-      coefficients: [],
-    };
+    return syntheticResult(degree, 1e-6, testMSE);
   });
   assert(
-    analyzeDoubleDescent(divergent) === "Numerical Divergence",
-    "noncompetitive interior recovery → Numerical Divergence",
+    analyzeDoubleDescent(partial) === "Partial Recovery",
+    "large finite variance explosion with recovery → Partial Recovery",
+  );
+  assert(
+    analyzeDoubleDescent(partial) !== "Numerical Failure",
+    "genuine finite variance explosion is not a numerical failure",
+  );
+
+  const nonFinite = partial.map((result) => ({ ...result }));
+  nonFinite[20] = { ...nonFinite[20]!, testMSE: Number.POSITIVE_INFINITY };
+  assert(
+    analyzeDoubleDescent(nonFinite) === "Numerical Failure",
+    "non-finite test error → Numerical Failure",
   );
 }
 
@@ -253,8 +270,8 @@ console.log("10. Honest wide-sweep default");
     `default split is 40 train / 460 test (got ${nTrain} / ${result.dataset.test.length})`,
   );
   assert(
-    result.summary.doubleDescentStatus !== "Clear Double Descent" &&
-      result.summary.doubleDescentStatus !== "Possible Double Descent",
+    result.summary.doubleDescentStatus !== "True Double Descent" &&
+      result.summary.doubleDescentStatus !== "Competitive Second Descent",
     `default does not claim competitive DD (got ${result.summary.doubleDescentStatus})`,
   );
   assert(
@@ -264,6 +281,19 @@ console.log("10. Honest wide-sweep default");
   assert(
     result.summary.testEstimateReliable,
     "default test estimate passes the 160-point reliability floor",
+  );
+  assert(
+    result.results.every(
+      (model) =>
+        Number.isFinite(model.testMSE) &&
+        Number.isFinite(model.noisyTestMSE) &&
+        Number.isFinite(model.conditionNumberUpperBound),
+    ),
+    "dual test metrics and conditioning bounds are finite",
+  );
+  assert(
+    result.summary.minTestError < result.summary.minNoisyTestError,
+    `truth-target minimum is below noisy-label minimum (${result.summary.minTestError} < ${result.summary.minNoisyTestError})`,
   );
 }
 
@@ -291,12 +321,12 @@ console.log("12. Detection calibration constants");
 {
   assert(
     DD_THRESHOLDS.COMPETITIVE_SECOND_MIN === 2 &&
-      DD_THRESHOLDS.DIVERGENCE_RISE === 100,
-    "competitive and divergence boundaries remain calibrated",
+      DD_THRESHOLDS.MAX_FORWARD_ERROR_BOUND === 1e-2,
+    "competitive boundary and precision budget remain documented",
   );
   assert(
     DD_THRESHOLDS.MIN_RELIABLE_TEST_SIZE === 160,
-    "Clear verdict requires at least 160 test points",
+    "True verdict requires at least 160 test points",
   );
 }
 

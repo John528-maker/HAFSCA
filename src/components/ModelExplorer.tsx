@@ -54,11 +54,15 @@ export default function ModelExplorer({ dataset, selected }: Props) {
         {m.title}
       </h3>
 
-      <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
+      <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <Stat label={m.polynomialDegree} value={String(selected.degree)} />
         <Stat label={m.parameters} value={String(selected.paramCount)} />
         <Stat label={m.trainMSE} value={selected.trainMSE.toExponential(3)} />
         <Stat label={m.testMSE} value={selected.testMSE.toExponential(3)} />
+        <Stat
+          label={m.noisyTestMSE}
+          value={selected.noisyTestMSE.toExponential(3)}
+        />
         <Stat
           label={m.generalizationGap}
           value={selected.generalizationGap.toExponential(3)}

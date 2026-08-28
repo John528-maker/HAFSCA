@@ -17,9 +17,9 @@ const en = {
     cta: "Start Experiment",
   },
   experiment: {
-    title: "Double Descent Stress Test",
+    title: "Double Descent Experiment",
     description:
-      "Test whether error really recovers after the interpolation peak. The experiment reports divergence or an exhausted sweep instead of claiming double descent when the return is not competitive.",
+      "Observe the expected variance explosion near interpolation, then test how far error recovers. The lab distinguishes partial recovery, a competitive second descent, an exhausted sweep, and an actual numerical failure.",
     settings: "Experiment Settings",
     datasetSize: "Dataset Size",
     noiseLevel: "Noise Level",
@@ -57,7 +57,8 @@ const en = {
     degree: (d: number) => `Degree ${d}`,
     notReached: "Not reached",
     minTrain: "Minimum Training Error",
-    minTest: "Minimum Test Error",
+    minTest: "Minimum Test MSE vs True Function",
+    minNoisyTest: "Minimum Test MSE vs Noisy Labels",
     doubleDescent: "Double Descent Evidence",
     beyondSweep:
       "The expected interpolation threshold (near train-set size) is beyond this sweep's max complexity. Try a smaller dataset size to observe the threshold and potential double descent.",
@@ -77,7 +78,8 @@ const en = {
     yAxisLog: "MSE (log)",
     yAxis: "MSE",
     trainError: "Training Error",
-    testError: "Test Error",
+    testError: "Test Error vs True Function",
+    noisyTestError: "Test Error vs Noisy Labels",
     interpolationThreshold: "Interpolation Threshold",
     degree: (d: number | string) => `Degree ${d}`,
   },
@@ -87,7 +89,8 @@ const en = {
     polynomialDegree: "Polynomial Degree",
     parameters: "Parameters",
     trainMSE: "Training MSE",
-    testMSE: "Test MSE",
+    testMSE: "Test MSE vs True Function",
+    noisyTestMSE: "Test MSE vs Noisy Labels",
     generalizationGap: "Generalization Gap",
     input: "Input (x)",
     training: "Training",
@@ -107,17 +110,21 @@ const en = {
       (mse ? ` (train MSE ≈ ${mse})` : "") +
       ". The displayed training error shows how closely the regularized fit interpolates.",
     peakNearThreshold: (degree: number) =>
-      `Near the interpolation threshold, training error is very low while test error rises (peak near degree ${degree}). This matches the expected behaviour around the interpolation threshold.`,
-    clearDoubleDescent:
-      "After the test-error peak near the interpolation region, test error decreases again as complexity grows further. This second descent is a clear instance of the double descent pattern in this run.",
-    possibleDoubleDescent:
-      "After a rise in test error, a later decrease is visible. This may indicate double descent, but the pattern is not strong enough to call it conclusive for this run.",
-    numericalDivergence:
-      "Test error increased by orders of magnitude and did not recover to a competitive level. This run shows numerical divergence, not double descent; treat the affected high-degree fits as unstable.",
+      `Near the interpolation threshold, test error peaks around degree ${degree}. This is the genuine statistical variance explosion predicted by theory, not evidence that the computation failed.`,
+    trueDoubleDescent:
+      "After the interpolation peak, test error fell below the first sweet-spot minimum. With a sufficiently large test set, this run shows true double descent.",
+    competitiveSecondDescent:
+      "After the interpolation peak, test error fell to at most twice the first sweet-spot minimum. The second descent is competitive, although it did not meet the reliable true-double-descent criterion.",
+    partialRecovery:
+      "After the interpolation peak, test error fell substantially but remained more than twice the first sweet-spot minimum. This is a real partial recovery, not a competitive double descent.",
+    variancePeakWithoutRecovery:
+      "A genuine variance peak appeared near interpolation, but no substantial second descent followed within the completed sweep.",
+    numericalFailure:
+      "The run produced non-finite values or a conditioning bound that leaves too little meaningful float64 precision. This is an actual numerical failure rather than statistical variance.",
     sweepRangeExhausted:
       "The sweep ended while test error was still falling, so the endpoint is not a second minimum. Extend the complexity range before deciding whether double descent occurred.",
-    noDoubleDescent:
-      "No clear second descent in test error was observed after the classical U-shaped region (or the interpolation peak). Double descent is not claimed for this run.",
+    noSecondDescent:
+      "No visible interpolation-peak-to-second-descent pattern was observed. Double descent is not claimed for this run.",
   },
   history: {
     title: "Experiment History",
@@ -147,11 +154,13 @@ const en = {
   },
   footer: "AI Research Lab · Educational experiment platform",
   verdicts: {
-    "Clear Double Descent": "Clear Double Descent",
-    "Possible Double Descent": "Possible Double Descent",
-    "No Clear Double Descent": "No Clear Double Descent",
+    "True Double Descent": "True Double Descent",
+    "Competitive Second Descent": "Competitive Second Descent",
+    "Partial Recovery": "Partial Recovery",
+    "Variance Peak Without Recovery": "Variance Peak Without Recovery",
+    "No Second Descent Observed": "No Second Descent Observed",
     "Sweep Range Exhausted": "Sweep Range Exhausted",
-    "Numerical Divergence": "Numerical Divergence",
+    "Numerical Failure": "Numerical Failure",
   } satisfies Record<DoubleDescentVerdict, string>,
 } as const;
 
@@ -168,9 +177,9 @@ const ko = {
     cta: "실험 시작하기",
   },
   experiment: {
-    title: "Double Descent 검증 실험",
+    title: "Double Descent 실험",
     description:
-      "보간 피크 이후 오차가 실제로 회복되는지 검증하세요. 경쟁력 있는 수준으로 돌아오지 않으면 double descent라고 주장하지 않고 수치적 발산 또는 스윕 범위 부족으로 보고합니다.",
+      "보간 근처에서 예상되는 분산 폭증을 관찰한 뒤 오차가 얼마나 회복되는지 확인해 보세요. 부분 회복, 경쟁력 있는 두 번째 하강, 스윕 범위 부족, 실제 수치 계산 실패를 구분해 보고합니다.",
     settings: "실험 설정",
     datasetSize: "데이터셋 크기",
     noiseLevel: "노이즈 수준",
@@ -208,7 +217,8 @@ const ko = {
     degree: (d: number) => `차수 ${d}`,
     notReached: "도달하지 않음",
     minTrain: "최소 학습 오차",
-    minTest: "최소 테스트 오차",
+    minTest: "최소 테스트 MSE (참 함수 기준)",
+    minNoisyTest: "최소 테스트 MSE (노이즈 레이블 기준)",
     doubleDescent: "Double Descent 근거",
     beyondSweep:
       "예상 보간 임계값(학습 집합 크기 근처)이 이번 스윕의 최대 복잡도를 넘습니다. 임계값과 잠재적 double descent를 보려면 더 작은 데이터셋을 사용해 보세요.",
@@ -228,7 +238,8 @@ const ko = {
     yAxisLog: "MSE (로그)",
     yAxis: "MSE",
     trainError: "학습 오차",
-    testError: "테스트 오차",
+    testError: "테스트 오차 (참 함수 기준)",
+    noisyTestError: "테스트 오차 (노이즈 레이블 기준)",
     interpolationThreshold: "보간 임계값",
     degree: (d: number | string) => `차수 ${d}`,
   },
@@ -238,7 +249,8 @@ const ko = {
     polynomialDegree: "다항식 차수",
     parameters: "파라미터 수",
     trainMSE: "학습 MSE",
-    testMSE: "테스트 MSE",
+    testMSE: "테스트 MSE (참 함수 기준)",
+    noisyTestMSE: "테스트 MSE (노이즈 레이블 기준)",
     generalizationGap: "일반화 격차",
     input: "입력 (x)",
     training: "학습",
@@ -258,17 +270,21 @@ const ko = {
       (mse ? ` (학습 MSE ≈ ${mse})` : "") +
       ". 표시된 학습 오차는 정규화된 적합이 학습 데이터를 얼마나 가깝게 보간하는지 보여 줍니다.",
     peakNearThreshold: (degree: number) =>
-      `보간 임계값 근처에서 학습 오차는 매우 낮지만 테스트 오차는 상승합니다(피크: 차수 ${degree} 근처). 이는 보간 임계값 주변에서 기대되는 동작과 일치합니다.`,
-    clearDoubleDescent:
-      "보간 구간 근처의 테스트 오차 피크 이후, 복잡도가 더 커지면 테스트 오차가 다시 감소합니다. 이번 실행에서는 double descent 패턴이 뚜렷하게 관찰됩니다.",
-    possibleDoubleDescent:
-      "테스트 오차 상승 이후 다시 감소하는 패턴이 보입니다. double descent를 시사할 수 있으나, 이번 실행만으로는 확정하기 어렵습니다.",
-    numericalDivergence:
-      "테스트 오차가 여러 자릿수 규모로 증가한 뒤 경쟁력 있는 수준으로 회복되지 않았습니다. 이번 실행은 double descent가 아니라 수치적 발산을 보이며, 해당 고차수 적합은 불안정한 것으로 해석해야 합니다.",
+      `보간 임계값 근처의 차수 ${degree} 부근에서 테스트 오차가 피크를 보입니다. 이는 이론이 예측하는 실제 통계적 분산 폭증이며, 계산 실패를 뜻하지 않습니다.`,
+    trueDoubleDescent:
+      "보간 피크 이후 테스트 오차가 첫 번째 최적 구간의 최솟값보다 낮아졌습니다. 테스트 집합도 충분히 크므로 이번 실행은 실제 double descent를 보여 줍니다.",
+    competitiveSecondDescent:
+      "보간 피크 이후 테스트 오차가 첫 번째 최적 구간 최솟값의 2배 이내로 낮아졌습니다. 두 번째 하강은 경쟁력 있지만, 신뢰 가능한 실제 double descent 기준에는 이르지 못했습니다.",
+    partialRecovery:
+      "보간 피크 이후 테스트 오차가 크게 낮아졌지만 첫 번째 최적 구간 최솟값의 2배보다 높은 수준에 머물렀습니다. 이는 실제 부분 회복이며, 경쟁력 있는 double descent는 아닙니다.",
+    variancePeakWithoutRecovery:
+      "보간 근처에서 실제 분산 피크가 나타났지만, 완료된 스윕 안에서는 뚜렷한 두 번째 하강이 뒤따르지 않았습니다.",
+    numericalFailure:
+      "유한하지 않은 값이 발생했거나 조건수 상한상 float64의 의미 있는 정밀도가 너무 적게 남았습니다. 이는 통계적 분산이 아니라 실제 수치 계산 실패입니다.",
     sweepRangeExhausted:
       "테스트 오차가 계속 감소하는 도중 스윕이 끝났으므로, 끝점은 두 번째 최솟값이 아닙니다. Double descent 발생 여부를 판단하기 전에 복잡도 범위를 더 확장하세요.",
-    noDoubleDescent:
-      "고전적인 U자형 구간(또는 보간 피크) 이후 테스트 오차의 뚜렷한 두 번째 하강은 관찰되지 않았습니다. 이번 실행에서는 double descent를 주장하지 않습니다.",
+    noSecondDescent:
+      "보간 피크에서 두 번째 하강으로 이어지는 뚜렷한 패턴이 관찰되지 않았습니다. 이번 실행에서는 double descent를 주장하지 않습니다.",
   },
   history: {
     title: "실험 기록",
@@ -298,11 +314,13 @@ const ko = {
   },
   footer: "AI Research Lab · 교육용 실험 플랫폼",
   verdicts: {
-    "Clear Double Descent": "뚜렷한 Double Descent",
-    "Possible Double Descent": "가능한 Double Descent",
-    "No Clear Double Descent": "뚜렷하지 않은 Double Descent",
+    "True Double Descent": "실제 Double Descent",
+    "Competitive Second Descent": "경쟁력 있는 두 번째 하강",
+    "Partial Recovery": "부분 회복",
+    "Variance Peak Without Recovery": "회복 없는 분산 피크",
+    "No Second Descent Observed": "두 번째 하강 관찰되지 않음",
     "Sweep Range Exhausted": "스윕 범위 부족",
-    "Numerical Divergence": "수치적 발산",
+    "Numerical Failure": "수치 계산 실패",
   } satisfies Record<DoubleDescentVerdict, string>,
 } as const;
 
@@ -355,6 +373,7 @@ export type Messages = {
     notReached: string;
     minTrain: string;
     minTest: string;
+    minNoisyTest: string;
     doubleDescent: string;
     beyondSweep: string;
     sweepRangeExhausted: string;
@@ -372,6 +391,7 @@ export type Messages = {
     yAxis: string;
     trainError: string;
     testError: string;
+    noisyTestError: string;
     interpolationThreshold: string;
     degree: (d: number | string) => string;
   };
@@ -382,6 +402,7 @@ export type Messages = {
     parameters: string;
     trainMSE: string;
     testMSE: string;
+    noisyTestMSE: string;
     generalizationGap: string;
     input: string;
     training: string;
@@ -396,11 +417,13 @@ export type Messages = {
     testDecreases: string;
     threshold: (degree: number, mse?: string) => string;
     peakNearThreshold: (degree: number) => string;
-    clearDoubleDescent: string;
-    possibleDoubleDescent: string;
-    numericalDivergence: string;
+    trueDoubleDescent: string;
+    competitiveSecondDescent: string;
+    partialRecovery: string;
+    variancePeakWithoutRecovery: string;
+    numericalFailure: string;
     sweepRangeExhausted: string;
-    noDoubleDescent: string;
+    noSecondDescent: string;
   };
   history: {
     title: string;

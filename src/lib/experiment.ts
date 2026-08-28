@@ -9,7 +9,8 @@ import {
   buildAnalysisNotes,
   DD_THRESHOLDS,
 } from "./analysis.ts";
-import { buildDataset } from "./dataset.ts";
+import { buildDataset, trueFunction } from "./dataset.ts";
+import { regularizedGramConditionUpperBound } from "./linalg.ts";
 import { generalizationGap, meanSquaredError } from "./metrics.ts";
 import { fitPolynomial, predict } from "./regression.ts";
 
@@ -108,7 +109,8 @@ export async function runExperiment(
   const trainX = dataset.train.map((p) => p.x);
   const trainY = dataset.train.map((p) => p.y);
   const testX = dataset.test.map((p) => p.x);
-  const testY = dataset.test.map((p) => p.y);
+  const noisyTestY = dataset.test.map((p) => p.y);
+  const trueTestY = testX.map(trueFunction);
 
   const degrees = degreeGrid(nTrain, config.maxComplexity);
   const results: ModelResult[] = [];
@@ -122,13 +124,21 @@ export async function runExperiment(
       const trainPred = predict(model, trainX);
       const testPred = predict(model, testX);
       const trainMSE = meanSquaredError(trainPred, trainY);
-      const testMSE = meanSquaredError(testPred, testY);
+      const testMSE = meanSquaredError(testPred, trueTestY);
+      const noisyTestMSE = meanSquaredError(testPred, noisyTestY);
       results.push({
         degree,
         paramCount: model.paramCount,
         trainMSE,
         testMSE,
-        generalizationGap: generalizationGap(testMSE, trainMSE),
+        noisyTestMSE,
+        conditionNumberUpperBound: regularizedGramConditionUpperBound(
+          nTrain,
+          model.paramCount,
+        ),
+        // Keep this comparison label-to-label; the primary truth metric has no
+        // directly comparable noisy training target.
+        generalizationGap: generalizationGap(noisyTestMSE, trainMSE),
         coefficients: model.coefficients,
       });
     } catch (err) {
@@ -168,6 +178,9 @@ export async function runExperiment(
   );
 
   const best = results.reduce((a, b) => (b.testMSE < a.testMSE ? b : a));
+  const bestNoisy = results.reduce((a, b) =>
+    b.noisyTestMSE < a.noisyTestMSE ? b : a,
+  );
   const minTrain = results.reduce((a, b) => (b.trainMSE < a.trainMSE ? b : a));
   const summary: ExperimentSummaryData = {
     datasetSize: config.datasetSize,
@@ -179,6 +192,7 @@ export async function runExperiment(
     bestComplexity: best.degree,
     minTrainError: minTrain.trainMSE,
     minTestError: best.testMSE,
+    minNoisyTestError: bestNoisy.noisyTestMSE,
     interpolationThreshold,
     doubleDescentStatus,
     thresholdBeyondSweep,

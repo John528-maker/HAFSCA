@@ -1,11 +1,12 @@
 /**
  * Diagnostic wide sweep (not part of npm scripts).
  * Run: node --experimental-strip-types scripts/dd-teststat.ts
- * Set DD_SEED_DETAILS=1 to print per-seed noisy-label ratios at the default.
+ * Set DD_SEED_DETAILS=1 to print per-seed truth-target ratios at the default.
  */
 import { performance } from "node:perf_hooks";
 import { analyzeDoubleDescent } from "../src/lib/analysis.ts";
 import { buildDataset, trueFunction } from "../src/lib/dataset.ts";
+import { regularizedGramConditionUpperBound } from "../src/lib/linalg.ts";
 import { meanSquaredError } from "../src/lib/metrics.ts";
 import { fitPolynomial, predict } from "../src/lib/regression.ts";
 import type { ModelResult } from "../src/types/experiment.ts";
@@ -47,7 +48,6 @@ function curve(
   noise: number,
   seed: number,
   maxDegree: number,
-  target: "truth" | "noisy",
 ): ModelResult[] {
   const dataset = buildDataset(
     N_TRAIN + TEST_SIZE,
@@ -58,10 +58,8 @@ function curve(
   const trainX = dataset.train.map((point) => point.x);
   const trainY = dataset.train.map((point) => point.y);
   const testX = dataset.test.map((point) => point.x);
-  const testY =
-    target === "truth"
-      ? testX.map(trueFunction)
-      : dataset.test.map((point) => point.y);
+  const trueTestY = testX.map(trueFunction);
+  const noisyTestY = dataset.test.map((point) => point.y);
   const stride = Math.ceil(maxDegree / 120);
   const degreeSet = new Set<number>();
   for (let degree = 1; degree <= maxDegree; degree += stride) {
@@ -73,13 +71,20 @@ function curve(
   return [...degreeSet].sort((a, b) => a - b).map((degree) => {
     const model = fitPolynomial(trainX, trainY, degree);
     const trainMSE = meanSquaredError(predict(model, trainX), trainY);
-    const testMSE = meanSquaredError(predict(model, testX), testY);
+    const testPred = predict(model, testX);
+    const testMSE = meanSquaredError(testPred, trueTestY);
+    const noisyTestMSE = meanSquaredError(testPred, noisyTestY);
     return {
       degree,
       paramCount: model.paramCount,
       trainMSE,
       testMSE,
-      generalizationGap: testMSE - trainMSE,
+      noisyTestMSE,
+      conditionNumberUpperBound: regularizedGramConditionUpperBound(
+        trainX.length,
+        model.paramCount,
+      ),
+      generalizationGap: noisyTestMSE - trainMSE,
       coefficients: model.coefficients,
     };
   });
@@ -137,7 +142,7 @@ function aggregate(rows: CurveStats[]) {
 if (process.env.DD_SEED_DETAILS === "1") {
   const rows = SEEDS.map((seed) => ({
     seed,
-    ...stats(curve(0.3, seed, 1280, "noisy")),
+    ...stats(curve(0.3, seed, 1280)),
   }));
   console.log(JSON.stringify(rows));
   process.exit(0);
@@ -147,7 +152,7 @@ for (const noise of [0.3, 0.5, 1]) {
   for (const maxDegree of [640, 1280, 2560]) {
     const started = performance.now();
     const rows = SEEDS.map((seed) =>
-      stats(curve(noise, seed, maxDegree, "truth")),
+      stats(curve(noise, seed, maxDegree)),
     );
     console.log(JSON.stringify({
       noise,

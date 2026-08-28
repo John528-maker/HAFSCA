@@ -19,6 +19,22 @@ export const RCOND = 1e-12;
 export const RIDGE = 1e-8;
 
 /**
+ * Conservative κ upper bound for the regularized Gram matrix.
+ *
+ * For positive-semidefinite G and λ = RIDGE · trace(G) / m:
+ * λmax(G + λI) ≤ trace(G) + λ and λmin(G + λI) ≥ λ, hence
+ * κ(G + λI) ≤ m / RIDGE + 1. This costs nothing to evaluate and avoids an
+ * O(m³) eigendecomposition for every point in an interactive sweep.
+ */
+export function regularizedGramConditionUpperBound(
+  sampleCount: number,
+  parameterCount: number,
+): number {
+  const gramSize = Math.min(sampleCount, parameterCount);
+  return gramSize / RIDGE + 1;
+}
+
+/**
  * Solve min-norm least squares: argmin ||X θ - y||₂ with min ||θ||₂.
  * - p ≤ n: θ = (X'X + λI)^{-1} X'y
  * - p > n: α = (XX' + λI)^{-1} y, θ = X' α
