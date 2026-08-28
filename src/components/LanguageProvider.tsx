@@ -12,7 +12,7 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useState,
+  useSyncExternalStore,
 } from "react";
 
 interface LanguageContextValue {
@@ -23,6 +23,7 @@ interface LanguageContextValue {
 }
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
+const LOCALE_CHANGE_EVENT = "ai-research-lab.locale-change";
 
 function readStoredLocale(): Locale {
   if (typeof window === "undefined") return "en";
@@ -34,32 +35,43 @@ function readStoredLocale(): Locale {
   }
 }
 
+function subscribeToLocale(onStoreChange: () => void): () => void {
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === LOCALE_STORAGE_KEY) onStoreChange();
+  };
+  window.addEventListener("storage", onStorage);
+  window.addEventListener(LOCALE_CHANGE_EVENT, onStoreChange);
+  return () => {
+    window.removeEventListener("storage", onStorage);
+    window.removeEventListener(LOCALE_CHANGE_EVENT, onStoreChange);
+  };
+}
+
+const getServerLocale = (): Locale => "en";
+
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>("en");
-  const [ready, setReady] = useState(false);
+  const locale = useSyncExternalStore(
+    subscribeToLocale,
+    readStoredLocale,
+    getServerLocale,
+  );
 
   useEffect(() => {
-    setLocaleState(readStoredLocale());
-    setReady(true);
-  }, []);
-
-  useEffect(() => {
-    if (!ready) return;
     document.documentElement.lang = locale === "ko" ? "ko" : "en";
+  }, [locale]);
+
+  const setLocale = useCallback((next: Locale) => {
     try {
-      window.localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+      window.localStorage.setItem(LOCALE_STORAGE_KEY, next);
     } catch {
       /* ignore quota errors */
     }
-  }, [locale, ready]);
-
-  const setLocale = useCallback((next: Locale) => {
-    setLocaleState(next);
+    window.dispatchEvent(new Event(LOCALE_CHANGE_EVENT));
   }, []);
 
   const toggleLocale = useCallback(() => {
-    setLocaleState((prev) => (prev === "en" ? "ko" : "en"));
-  }, []);
+    setLocale(locale === "en" ? "ko" : "en");
+  }, [locale, setLocale]);
 
   const value = useMemo<LanguageContextValue>(
     () => ({

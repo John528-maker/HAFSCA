@@ -108,6 +108,8 @@ const en = {
       "After the test-error peak near the interpolation region, test error decreases again as complexity grows further. This second descent is a clear instance of the double descent pattern in this run.",
     possibleDoubleDescent:
       "After a rise in test error, a later decrease is visible. This may indicate double descent, but the pattern is not strong enough to call it conclusive for this run.",
+    numericalDivergence:
+      "Test error increased by orders of magnitude and did not recover to a competitive level. This run shows numerical divergence, not double descent; treat the affected high-degree fits as unstable.",
     noDoubleDescent:
       "No clear second descent in test error was observed after the classical U-shaped region (or the interpolation peak). Double descent is not claimed for this run.",
   },
@@ -142,6 +144,7 @@ const en = {
     "Clear Double Descent": "Clear Double Descent",
     "Possible Double Descent": "Possible Double Descent",
     "No Clear Double Descent": "No Clear Double Descent",
+    "Numerical Divergence": "Numerical Divergence",
   } satisfies Record<DoubleDescentVerdict, string>,
 } as const;
 
@@ -249,6 +252,8 @@ const ko = {
       "보간 구간 근처의 테스트 오차 피크 이후, 복잡도가 더 커지면 테스트 오차가 다시 감소합니다. 이번 실행에서는 double descent 패턴이 뚜렷하게 관찰됩니다.",
     possibleDoubleDescent:
       "테스트 오차 상승 이후 다시 감소하는 패턴이 보입니다. double descent를 시사할 수 있으나, 이번 실행만으로는 확정하기 어렵습니다.",
+    numericalDivergence:
+      "테스트 오차가 여러 자릿수 규모로 증가한 뒤 경쟁력 있는 수준으로 회복되지 않았습니다. 이번 실행은 double descent가 아니라 수치적 발산을 보이며, 해당 고차수 적합은 불안정한 것으로 해석해야 합니다.",
     noDoubleDescent:
       "고전적인 U자형 구간(또는 보간 피크) 이후 테스트 오차의 뚜렷한 두 번째 하강은 관찰되지 않았습니다. 이번 실행에서는 double descent를 주장하지 않습니다.",
   },
@@ -283,6 +288,7 @@ const ko = {
     "Clear Double Descent": "뚜렷한 Double Descent",
     "Possible Double Descent": "가능한 Double Descent",
     "No Clear Double Descent": "뚜렷하지 않은 Double Descent",
+    "Numerical Divergence": "수치적 발산",
   } satisfies Record<DoubleDescentVerdict, string>,
 } as const;
 
@@ -376,6 +382,7 @@ export type Messages = {
     peakNearThreshold: (degree: number) => string;
     clearDoubleDescent: string;
     possibleDoubleDescent: string;
+    numericalDivergence: string;
     noDoubleDescent: string;
   };
   history: {

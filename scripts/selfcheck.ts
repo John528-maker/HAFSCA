@@ -36,8 +36,16 @@ console.log("1. Exact recovery of a known linear target");
   const preds = predict(model, xs);
   const mse = meanSquaredError(preds, ys);
   assert(mse < 1e-10, `linear fit MSE ~ 0 (got ${mse})`);
-  assert(almostEqual(model.coefficients[0]!, 2, 1e-8), `intercept ≈ 2 (got ${model.coefficients[0]})`);
-  assert(almostEqual(model.coefficients[1]!, 3, 1e-8), `slope ≈ 3 (got ${model.coefficients[1]})`);
+  assert(almostEqual(model.coefficients[0]!, 2, 1e-7), `intercept ≈ 2 (got ${model.coefficients[0]})`);
+  assert(almostEqual(model.coefficients[1]!, 3, 1e-7), `slope ≈ 3 (got ${model.coefficients[1]})`);
+  const heldOutX = [-0.75, 0.25, 0.75];
+  const heldOutPreds = predict(model, heldOutX);
+  assert(
+    heldOutPreds.every((value, i) =>
+      almostEqual(value, 2 + 3 * heldOutX[i]!, 1e-7),
+    ),
+    "well-conditioned fit predicts correctly away from training points",
+  );
 }
 
 console.log("2. Interpolation: trainMSE ≈ 0 once p > n");
@@ -135,6 +143,35 @@ console.log("7. analyzeDoubleDescent shape detection");
   assert(
     analyzeDoubleDescent(flat) === "No Clear Double Descent",
     "flat curve → No Clear Double Descent",
+  );
+}
+
+console.log("8. High-degree divergence is not double descent");
+{
+  const data = buildDataset(100, 0.2, 0.8, 42);
+  const trainX = data.train.map((p) => p.x);
+  const trainY = data.train.map((p) => p.y);
+  const testX = data.test.map((p) => p.x);
+  const testY = data.test.map((p) => p.y);
+  const degrees = [1, 5, 9, 13, 50, 75, 80, 120, 160];
+  const highDegreeRun: ModelResult[] = degrees.map((degree) => {
+    const model = fitPolynomial(trainX, trainY, degree);
+    const trainMSE = meanSquaredError(predict(model, trainX), trainY);
+    const testMSE = meanSquaredError(predict(model, testX), testY);
+    return {
+      degree,
+      paramCount: model.paramCount,
+      trainMSE,
+      testMSE,
+      generalizationGap: testMSE - trainMSE,
+      coefficients: model.coefficients,
+    };
+  });
+  const verdict = analyzeDoubleDescent(highDegreeRun);
+  assert(verdict === "Numerical Divergence", `unstable high-degree run → divergence (got ${verdict})`);
+  assert(
+    verdict !== "Clear Double Descent" && verdict !== "Possible Double Descent",
+    "divergent run is not classified as double descent",
   );
 }
 

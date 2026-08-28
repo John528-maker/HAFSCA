@@ -8,6 +8,16 @@ export const DD_THRESHOLDS = {
   CLEAR_DROP: 0.7,
   RISE: 1.2,
   DROP: 0.85,
+  /**
+   * A second minimum within 2× the first is in the same practical error
+   * regime; a fall that remains worse by more than 100% is not competitive.
+   */
+  COMPETITIVE_SECOND_MIN: 2,
+  /**
+   * A 100× rise is two orders of magnitude and treated as a numerical
+   * blow-up when the curve does not recover to the competitive regime.
+   */
+  DIVERGENCE_RISE: 100,
 } as const;
 
 export function findInterpolationThreshold(
@@ -43,12 +53,15 @@ interface CurvePoint {
 
 /**
  * Detect the classical U → peak → second descent pattern on the test-error curve.
- * Returns one of three honest verdicts; never claims DD when the curve doesn't show it.
+ * Separates a numerical blow-up from an observed or absent double descent.
  */
 export function analyzeDoubleDescent(results: ModelResult[]): DoubleDescentVerdict {
   if (results.length < 8) return "No Clear Double Descent";
 
   const raw = results.map((r) => r.testMSE);
+  if (raw.some((value) => !Number.isFinite(value))) {
+    return "Numerical Divergence";
+  }
   const smoothed = smooth(raw, DD_THRESHOLDS.SMOOTH_WINDOW);
 
   // 1. First local minimum (classical sweet spot).
@@ -89,6 +102,7 @@ export function analyzeDoubleDescent(results: ModelResult[]): DoubleDescentVerdi
     }
   }
   if (!peak || peak.value <= firstMin.value) return "No Clear Double Descent";
+  const rise = peak.value / Math.max(firstMin.value, 1e-12);
 
   // 3. Subsequent minimum after the peak.
   let secondMin: CurvePoint | null = null;
@@ -107,10 +121,21 @@ export function analyzeDoubleDescent(results: ModelResult[]): DoubleDescentVerdi
     }
     secondMin = { index: best, degree: results[best]!.degree, value: smoothed[best]! };
   }
-  if (!secondMin || secondMin.value >= peak.value) return "No Clear Double Descent";
+  if (!secondMin || secondMin.value >= peak.value) {
+    return rise >= DD_THRESHOLDS.DIVERGENCE_RISE
+      ? "Numerical Divergence"
+      : "No Clear Double Descent";
+  }
 
-  const rise = peak.value / Math.max(firstMin.value, 1e-12);
   const dropRatio = secondMin.value / peak.value;
+  const secondMinRatio =
+    secondMin.value / Math.max(firstMin.value, 1e-12);
+  const isCompetitive =
+    secondMinRatio <= DD_THRESHOLDS.COMPETITIVE_SECOND_MIN;
+
+  if (rise >= DD_THRESHOLDS.DIVERGENCE_RISE && !isCompetitive) {
+    return "Numerical Divergence";
+  }
 
   if (
     rise >= DD_THRESHOLDS.CLEAR_RISE &&
@@ -120,7 +145,11 @@ export function analyzeDoubleDescent(results: ModelResult[]): DoubleDescentVerdi
     return "Clear Double Descent";
   }
 
-  if (rise >= DD_THRESHOLDS.RISE && dropRatio <= DD_THRESHOLDS.DROP) {
+  if (
+    rise >= DD_THRESHOLDS.RISE &&
+    dropRatio <= DD_THRESHOLDS.DROP &&
+    isCompetitive
+  ) {
     return "Possible Double Descent";
   }
 
@@ -180,6 +209,8 @@ export function buildAnalysisNotes(
     notes.push(a.clearDoubleDescent);
   } else if (verdict === "Possible Double Descent") {
     notes.push(a.possibleDoubleDescent);
+  } else if (verdict === "Numerical Divergence") {
+    notes.push(a.numericalDivergence);
   } else {
     notes.push(a.noDoubleDescent);
   }

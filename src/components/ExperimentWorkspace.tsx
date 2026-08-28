@@ -20,7 +20,11 @@ import type {
   ExperimentResult,
   HistoryEntry,
 } from "@/types/experiment";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
+
+const subscribeToHydration = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
 
 export default function ExperimentWorkspace() {
   const { locale, t } = useLanguage();
@@ -33,11 +37,12 @@ export default function ExperimentWorkspace() {
     total: number;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
-
-  useEffect(() => {
-    setHistory(loadHistory());
-  }, []);
+  const [history, setHistory] = useState<HistoryEntry[]>(loadHistory);
+  const hydrated = useSyncExternalStore(
+    subscribeToHydration,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
 
   const selected = useMemo(() => {
     if (!result || selectedDegree === null) return null;
@@ -137,7 +142,7 @@ export default function ExperimentWorkspace() {
             <AnalysisPanel notes={analysisNotes} />
 
             <ExperimentHistory
-              entries={history}
+              entries={hydrated ? history : []}
               onReload={handleReload}
               onClear={handleClear}
             />

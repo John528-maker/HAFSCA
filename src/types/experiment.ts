@@ -1,7 +1,8 @@
 export type DoubleDescentVerdict =
   | "Clear Double Descent"
   | "Possible Double Descent"
-  | "No Clear Double Descent";
+  | "No Clear Double Descent"
+  | "Numerical Divergence";
 
 export interface ExperimentConfig {
   datasetSize: number;
