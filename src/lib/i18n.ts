@@ -44,6 +44,25 @@ const en = {
     diverging: "Diverging",
     aha: "Lock α at 0.2 and drag feature scale to 10, then play. The same algorithm flies off the bowl because you stretched a feature.",
   },
+  lr: {
+    title: "Live least squares",
+    guide:
+      "This line is not drawn by eye. It is the unique intercept and slope that make the average squared vertical gap as small as possible.",
+    hint: "Drag a point. Click empty space to add one (up to 24). Residuals are vertical: ŷ − y.",
+    noise: "Noise σ",
+    seed: "Seed",
+    intercept: "Intercept",
+    truth: "Show truth",
+    residuals: "Show residuals",
+    reset: "Reset",
+    outlier: "Add outlier",
+    deletePoint: "Delete selected",
+    status: "Status",
+    ok: "Unique fit",
+    needSpread: "No unique slope — spread the points in x.",
+    needPoints: "Need at least two points.",
+    aha: "The rightmost large residual accounts for more than 40% of the MSE. Drag that point onto the line and watch MSE collapse.",
+  },
   overfit: {
     title: "Overfitting",
     run: "Fit degrees 0–12",
@@ -255,6 +274,25 @@ const ko = {
     diverging: "발산",
     aha: "α를 0.2에 고정하고 특성 스케일을 10으로 올린 뒤 재생해 보세요. 알고리즘은 그대로인데 특성을 늘렸기 때문에 사발을 벗어납니다.",
   },
+  lr: {
+    title: "실시간 최소제곱",
+    guide:
+      "이 직선은 눈으로 그린 것이 아닙니다. 세로 방향 제곱 오차의 평균을 가장 작게 만드는 유일한 기울기와 절편입니다.",
+    hint: "점을 드래그하세요. 빈 곳을 클릭하면 점을 추가합니다(최대 24). 잔차는 세로입니다: ŷ − y.",
+    noise: "노이즈 σ",
+    seed: "시드",
+    intercept: "절편",
+    truth: "참 직선",
+    residuals: "잔차",
+    reset: "초기화",
+    outlier: "이상점 추가",
+    deletePoint: "선택 삭제",
+    status: "상태",
+    ok: "유일한 적합",
+    needSpread: "기울기가 유일하지 않습니다. x 방향으로 점을 벌리세요.",
+    needPoints: "점이 두 개 이상 필요합니다.",
+    aha: "가장 큰 잔차가 MSE의 40%를 넘습니다. 그 점을 직선 위로 끌어 보세요. MSE가 무너집니다.",
+  },
   overfit: {
     title: "과적합",
     run: "차수 0–12 적합",
@@ -463,6 +501,24 @@ export type Messages = {
     monotonic: string;
     oscillating: string;
     diverging: string;
+    aha: string;
+  };
+  lr: {
+    title: string;
+    guide: string;
+    hint: string;
+    noise: string;
+    seed: string;
+    intercept: string;
+    truth: string;
+    residuals: string;
+    reset: string;
+    outlier: string;
+    deletePoint: string;
+    status: string;
+    ok: string;
+    needSpread: string;
+    needPoints: string;
     aha: string;
   };
   overfit: {

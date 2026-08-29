@@ -34,6 +34,14 @@ import {
   runOverfitExperiment,
   validateOverfitConfig,
 } from "../src/lib/overfit.ts";
+import {
+  closedFormOls,
+  fitLiveOls,
+  generateOlsPoints,
+  olsMetrics,
+  olsRankStatus,
+  type OlsPoint,
+} from "../src/lib/ols.ts";
 
 let passed = 0;
 let failed = 0;
@@ -439,6 +447,60 @@ console.log("15. Overfitting cap and seed notes");
     seed1.note === "no-sweet-spot",
     `seed 1 has no clean sweet spot (got ${seed1.note}, best ${seed1.bestDegree})`,
   );
+}
+
+console.log("16. Live OLS C §2 contract");
+{
+  const noiseless = generateOlsPoints(8, 0, 42);
+  const live = fitLiveOls(noiseless, true);
+  const closed = closedFormOls(noiseless, true);
+  assert(live.status === "ok" && closed !== null, "noiseless sample has unique slope");
+  assert(
+    live.w !== null &&
+      live.b !== null &&
+      closed !== null &&
+      almostEqual(live.w, 0.8, 1e-3) &&
+      almostEqual(live.b, 0.15, 1e-3),
+    `σ=0 recovers (0.8, 0.15) (got ${live.w}, ${live.b})`,
+  );
+  assert(
+    live.w !== null &&
+      live.b !== null &&
+      closed !== null &&
+      almostEqual(live.w, closed.w, 1e-6) &&
+      almostEqual(live.b, closed.b, 1e-6),
+    "engine solver matches closed form on a well-spread design",
+  );
+
+  const pair: OlsPoint[] = [
+    { id: 0, x: -0.5, y: 0.1 },
+    { id: 1, x: 0.5, y: 0.9 },
+  ];
+  const two = fitLiveOls(pair, true);
+  const twoMetrics = olsMetrics(pair, two.w!, two.b!);
+  assert(twoMetrics.mse < 1e-12, `n=2 interpolates (mse=${twoMetrics.mse})`);
+
+  const stacked: OlsPoint[] = [
+    { id: 0, x: 0.2, y: -1 },
+    { id: 1, x: 0.2, y: 0 },
+    { id: 2, x: 0.2, y: 1 },
+  ];
+  assert(olsRankStatus(stacked, true) === "need-spread", "identical x → need-spread");
+  const frozen = fitLiveOls(stacked, true);
+  assert(
+    frozen.w === null && frozen.b === null,
+    "degenerate S_xx does not call a fake slope through the solver",
+  );
+
+  const flat: OlsPoint[] = [
+    { id: 0, x: -1, y: 0.4 },
+    { id: 1, x: 0, y: 0.4 },
+    { id: 2, x: 1, y: 0.4 },
+  ];
+  const flatFit = fitLiveOls(flat, true);
+  const flatMetrics = olsMetrics(flat, flatFit.w!, flatFit.b!);
+  assert(flatMetrics.r2 === null, "SST=0 leaves R² undefined");
+  assert(almostEqual(flatFit.w!, 0, 1e-6), `flat y → w≈0 (got ${flatFit.w})`);
 }
 
 console.log(`\n${passed} passed, ${failed} failed`);

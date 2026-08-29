@@ -10,14 +10,16 @@ export const LEARNING_PATHS: LearningPath[] = [
     id: "start",
     title: { en: "Start here", ko: "여기서 시작" },
     description: {
-      en: "The published spine: models, loss, gradient descent, overfitting, then the flagship lab.",
-      ko: "공개된 척추: 모델, 손실, 경사 하강, 과적합, 그리고 대표 실험.",
+      en: "The published spine: models, loss, polynomials, gradient descent, generalization, overfitting, then the flagship lab.",
+      ko: "공개된 척추: 모델, 손실, 다항, 경사 하강, 일반화, 과적합, 그리고 대표 실험.",
     },
     slugs: [
       "functions-and-parameters",
       "linear-regression",
       "loss-function",
+      "polynomial-regression",
       "gradient-descent",
+      "generalization",
       "overfitting",
       "double-descent",
     ],

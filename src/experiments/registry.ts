@@ -1,4 +1,5 @@
 export const EXPERIMENT_IDS = [
+  "linear-regression",
   "gradient-descent",
   "overfitting",
   "double-descent",

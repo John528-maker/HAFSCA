@@ -41,6 +41,7 @@ export const LESSONS: LessonMeta[] = [
       ko: "x에 대해 직선일 필요는 없고, 매개변수에 대해 선형인 모델입니다.",
     },
     prerequisites: ["functions-and-parameters"],
+    experimentId: "linear-regression",
     published: true,
   },
   {
@@ -65,7 +66,7 @@ export const LESSONS: LessonMeta[] = [
       ko: "기울기를 만나기 전에 복잡도를 손잡이로 만집니다.",
     },
     prerequisites: ["linear-regression"],
-    published: false,
+    published: true,
   },
   {
     slug: "derivative",
@@ -150,7 +151,7 @@ export const LESSONS: LessonMeta[] = [
       ko: "학습 오차가 질문이 아닙니다. 보지 못한 오차가 질문입니다.",
     },
     prerequisites: ["loss-function"],
-    published: false,
+    published: true,
   },
   {
     slug: "overfitting",
