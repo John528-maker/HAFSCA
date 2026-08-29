@@ -1,43 +1,35 @@
-# Linear Regression: Mean Squared Error
+# What is it?
 
-For a design matrix $X \in \mathbb{R}^{n \times d}$, parameters $\theta$, and targets $y$, define the mean squared error:
-
-$$
-J(\theta) = \frac{1}{n}\lVert X\theta-y\rVert_2^2.
-$$
-
-The gradient of mean squared error is $\nabla J(\theta) = \frac{2}{n}X^{\top}(X\theta-y)$. Step by step:
+**Linear regression** means the prediction is linear in the **parameters** $\theta$, not necessarily in $x$:
 
 $$
-\begin{aligned}
-J(\theta)
-  &= \frac{1}{n}(X\theta-y)^\top(X\theta-y) \\
-  &= \frac{1}{n}\left(\theta^\top X^\top X\theta - 2y^\top X\theta + y^\top y\right), \\
-\frac{\partial J}{\partial \theta}
-  &= \frac{2}{n}X^\top X\theta - \frac{2}{n}X^\top y \\
-  &= \frac{2}{n}X^\top(X\theta-y).
-\end{aligned}
+\hat y = \theta^{\top}\phi(x).
 $$
 
-Setting the gradient to zero gives the normal equations:
+A polynomial in $x$ is still linear regression in $\theta$.
+
+# Why it matters
+
+The live labs on this site fit polynomials. They are linear models in Chebyshev features $\phi(x)=(T_0(x),\ldots,T_d(x))^{\top}$. That is why a “wiggly” curve can still be ordinary least squares.
+
+# Intuition
+
+“Linear” is about how $\theta$ enters, not about the graph looking like a straight line.
+
+# Mathematics
+
+For $n$ training points stack the rows $\phi(x_i)^{\top}$ into $X\in\mathbb{R}^{n\times p}$. Then $\hat{\mathbf y}=X\theta$. Residual convention on this site: $\mathbf r=X\theta-\mathbf y$ (prediction minus target).
+
+# Derivation
+
+Mean squared error (no $\tfrac12$ factor, matching the engine) is
 
 $$
-X^\top X\hat{\theta}=X^\top y,
-\qquad
-\hat{\theta}=(X^\top X)^{-1}X^\top y.
+J(\theta)=\frac{1}{n}\lVert X\theta-y\rVert_2^2.
 $$
 
-A small matrix example is
+The gradient is $\nabla J(\theta)=\frac{2}{n}X^{\top}(X\theta-y)$. Setting it to zero gives the normal equations $X^{\top}X\hat\theta=X^{\top}y$.
 
-$$
-X =
-\begin{pmatrix}
-1 & x_1 \\
-1 & x_2 \\
-1 & x_3
-\end{pmatrix},
-\qquad
-\sum_{i=1}^{n}(x_i^\top\theta-y_i)^2.
-$$
+# Summary
 
-한국어 확인: 평균 제곱 오차의 기울기 $\nabla J(\theta)$는 예측값과 정답의 차이를 줄이는 방향을 알려 줍니다. 위의 수식과 한글 문장이 같은 문단에서 올바르게 표시되어야 합니다.
+If you remember one sentence: **linear in $\theta$, not necessarily in $x$**.

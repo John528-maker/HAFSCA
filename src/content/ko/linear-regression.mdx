@@ -1,43 +1,35 @@
-# 선형 회귀: 평균 제곱 오차
+# 무엇인가?
 
-설계 행렬 $X \in \mathbb{R}^{n \times d}$, 매개변수 $\theta$, 정답 $y$에 대해 평균 제곱 오차를 정의합니다:
-
-$$
-J(\theta) = \frac{1}{n}\lVert X\theta-y\rVert_2^2.
-$$
-
-평균 제곱 오차의 기울기는 $\nabla J(\theta) = \frac{2}{n}X^{\top}(X\theta-y)$입니다. 단계별 유도는 다음과 같습니다:
+**선형 회귀**는 예측이 $x$가 아니라 **매개변수** $\theta$에 대해 선형이라는 뜻입니다.
 
 $$
-\begin{aligned}
-J(\theta)
-  &= \frac{1}{n}(X\theta-y)^\top(X\theta-y) \\
-  &= \frac{1}{n}\left(\theta^\top X^\top X\theta - 2y^\top X\theta + y^\top y\right), \\
-\frac{\partial J}{\partial \theta}
-  &= \frac{2}{n}X^\top X\theta - \frac{2}{n}X^\top y \\
-  &= \frac{2}{n}X^\top(X\theta-y).
-\end{aligned}
+\hat y = \theta^{\top}\phi(x).
 $$
 
-기울기를 영으로 놓으면 정규 방정식을 얻습니다:
+$x$에 대한 다항식이어도 $\theta$에 대해서는 선형 회귀입니다.
+
+# 왜 중요한가?
+
+이 사이트의 실험은 다항식을 맞춥니다. Chebyshev 특징 $\phi(x)=(T_0(x),\ldots,T_d(x))^{\top}$ 위의 선형 모델입니다. 그래서 구불구불한 곡선도 보통의 최소제곱입니다.
+
+# 직관
+
+“선형”은 그래프가 직선처럼 보인다는 말이 아니라, $\theta$가 식에 들어가는 방식입니다.
+
+# 수학
+
+학습점 $n$개의 행 $\phi(x_i)^{\top}$를 쌓으면 $X\in\mathbb{R}^{n\times p}$이고 $\hat{\mathbf y}=X\theta$입니다. 이 사이트의 잔차 규약: $\mathbf r=X\theta-\mathbf y$ (예측 빼기 목표).
+
+# 유도
+
+엔진과 같이 $\tfrac12$ 없는 평균 제곱 오차
 
 $$
-X^\top X\hat{\theta}=X^\top y,
-\qquad
-\hat{\theta}=(X^\top X)^{-1}X^\top y.
+J(\theta)=\frac{1}{n}\lVert X\theta-y\rVert_2^2.
 $$
 
-작은 행렬 예시는 다음과 같습니다:
+기울기는 $\nabla J(\theta)=\frac{2}{n}X^{\top}(X\theta-y)$이고, 영으로 놓으면 정규 방정식 $X^{\top}X\hat\theta=X^{\top}y$입니다.
 
-$$
-X =
-\begin{pmatrix}
-1 & x_1 \\
-1 & x_2 \\
-1 & x_3
-\end{pmatrix},
-\qquad
-\sum_{i=1}^{n}(x_i^\top\theta-y_i)^2.
-$$
+# 요약
 
-English check: the gradient $\nabla J(\theta)$ should coexist with Korean 한글 text without encoding or layout corruption.
+한 문장: **$\theta$에 대해 선형이지, $x$에 대해 직선일 필요는 없습니다.**

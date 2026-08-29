@@ -94,10 +94,10 @@ export default function ExperimentWorkspace() {
 
   return (
     <section id="experiments" className="scroll-mt-16">
-      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-        <h2 className="text-xl font-semibold tracking-tight">
+      <div>
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-muted">
           {t.experiment.title}
-        </h2>
+        </h3>
         <p className="mt-1 max-w-2xl text-sm text-muted">
           {t.experiment.description}
         </p>

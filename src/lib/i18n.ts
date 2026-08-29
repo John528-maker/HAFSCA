@@ -6,7 +6,58 @@ export const LOCALE_STORAGE_KEY = "ai-research-lab.locale";
 
 const en = {
   siteName: "AI Research Lab",
-  nav: { experiments: "Experiments", concepts: "Concepts", about: "About" },
+  nav: {
+    home: "Home",
+    learn: "Course",
+    experiments: "Lab",
+    concepts: "Concepts",
+    about: "About",
+  },
+  course: {
+    start: "Start the course",
+    lab: "Open the interpolation lab",
+    map: "Course map",
+    coming: "This lesson is not published yet.",
+    prereq: "Recommended first:",
+    prev: "Previous",
+    next: "Next",
+    experiment: "Experiment",
+    briefing:
+      "This lab shows a genuine variance explosion near interpolation, then partial recovery. It does not claim a second descent that beats the first minimum.",
+  },
+  gd: {
+    title: "Gradient descent",
+    play: "Play",
+    pause: "Pause",
+    step: "Step",
+    reset: "Reset",
+    alpha: "Learning rate α",
+    scale: "Feature scale s",
+    w0: "Initial w",
+    b0: "Initial b",
+    iterations: "Iterations T",
+    noise: "Noise σ",
+    seed: "Seed",
+    status: "Status",
+    monotonic: "Monotonic",
+    oscillating: "Oscillating",
+    diverging: "Diverging",
+    aha: "Lock α at 0.2 and drag feature scale to 10, then play. The same algorithm flies off the bowl because you stretched a feature.",
+  },
+  overfit: {
+    title: "Overfitting",
+    run: "Fit degrees 0–12",
+    seed: "Seed",
+    noise: "Noise σ",
+    plateau:
+      "On a typical sample the test-error minimum is a plateau across degrees 3–5, not a single true degree.",
+    noSweet:
+      "This sample does not show a clean sweet spot. That is expected for some seeds — change the seed.",
+    uCurve:
+      "Training error falls while test error eventually rises: a U-shaped test curve, not a proof that degree 3 is uniquely best.",
+    best: (degree: number, cap: number) =>
+      `Best degree on the truth-target test MSE: ${degree}. Cap ${cap}.`,
+  },
   languageToggle: "한국어",
   hero: {
     eyebrow: "AI Research Lab",
@@ -166,7 +217,58 @@ const en = {
 
 const ko = {
   siteName: "AI Research Lab",
-  nav: { experiments: "실험", concepts: "개념", about: "소개" },
+  nav: {
+    home: "홈",
+    learn: "수업",
+    experiments: "실험실",
+    concepts: "개념",
+    about: "소개",
+  },
+  course: {
+    start: "수업 시작하기",
+    lab: "보간 실험 열기",
+    map: "수업 지도",
+    coming: "이 수업은 아직 공개되지 않았습니다.",
+    prereq: "먼저 보면 좋은 수업:",
+    prev: "이전",
+    next: "다음",
+    experiment: "실험",
+    briefing:
+      "이 실험은 보간 근처의 실제 분산 폭증과 그 이후의 부분 회복을 보여 줍니다. 두 번째 하강이 첫 최소점보다 좋아진다고 주장하지 않습니다.",
+  },
+  gd: {
+    title: "경사 하강법",
+    play: "재생",
+    pause: "일시정지",
+    step: "한 걸음",
+    reset: "초기화",
+    alpha: "학습률 α",
+    scale: "특성 스케일 s",
+    w0: "초기 w",
+    b0: "초기 b",
+    iterations: "반복 T",
+    noise: "노이즈 σ",
+    seed: "시드",
+    status: "상태",
+    monotonic: "단조 수렴",
+    oscillating: "진동하며 수렴",
+    diverging: "발산",
+    aha: "α를 0.2에 고정하고 특성 스케일을 10으로 올린 뒤 재생해 보세요. 알고리즘은 그대로인데 특성을 늘렸기 때문에 사발을 벗어납니다.",
+  },
+  overfit: {
+    title: "과적합",
+    run: "차수 0–12 적합",
+    seed: "시드",
+    noise: "노이즈 σ",
+    plateau:
+      "전형적인 표본에서 테스트 오차 최솟값은 차수 3–5의 평탄 구간이며, 진짜 차수 하나만이 최적이라고 말할 수 없습니다.",
+    noSweet:
+      "이 표본은 깨끗한 최적 구간을 보여 주지 않습니다. 일부 시드에서는 정상이니 시드를 바꿔 보세요.",
+    uCurve:
+      "학습 오차는 내려가고 테스트 오차는 결국 올라갑니다. U자 곡선이지, 차수 3이 유일하게 최적이라는 증명은 아닙니다.",
+    best: (degree: number, cap: number) =>
+      `참 함수 기준 테스트 MSE가 가장 낮은 차수: ${degree}. 상한 ${cap}.`,
+  },
   languageToggle: "English",
   hero: {
     eyebrow: "AI Research Lab",
@@ -326,7 +428,53 @@ const ko = {
 
 export type Messages = {
   siteName: string;
-  nav: { experiments: string; concepts: string; about: string };
+  nav: {
+    home: string;
+    learn: string;
+    experiments: string;
+    concepts: string;
+    about: string;
+  };
+  course: {
+    start: string;
+    lab: string;
+    map: string;
+    coming: string;
+    prereq: string;
+    prev: string;
+    next: string;
+    experiment: string;
+    briefing: string;
+  };
+  gd: {
+    title: string;
+    play: string;
+    pause: string;
+    step: string;
+    reset: string;
+    alpha: string;
+    scale: string;
+    w0: string;
+    b0: string;
+    iterations: string;
+    noise: string;
+    seed: string;
+    status: string;
+    monotonic: string;
+    oscillating: string;
+    diverging: string;
+    aha: string;
+  };
+  overfit: {
+    title: string;
+    run: string;
+    seed: string;
+    noise: string;
+    plateau: string;
+    noSweet: string;
+    uCurve: string;
+    best: (degree: number, cap: number) => string;
+  };
   languageToggle: string;
   hero: {
     eyebrow: string;

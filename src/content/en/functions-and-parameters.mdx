@@ -1,0 +1,19 @@
+# What is it?
+
+A **model** is a function $f(x;\theta)$ whose output depends on inputs $x$ and on **parameters** $\theta$. Changing $\theta$ changes the function you get, without rewriting the formula.
+
+# Why it matters
+
+Every later lesson is about choosing $\theta$ so that $f$ matches examples. If “model = parameterized function” is not clear, loss, gradients, and overfitting will look like disconnected jargon.
+
+# Intuition
+
+Think of $f(x;\theta)=\theta_0+\theta_1 x$. The *shape* is a line. The *particular* line is $\theta$. Drag $\theta_1$ and the slope moves. The data did not change; the function family did not change; only the parameters did.
+
+# Mathematics
+
+We write $\theta\in\mathbb{R}^{p}$. For a degree-$d$ polynomial, $p=d+1$. The map $x\mapsto \phi(x)$ (features) is fixed; learning only moves $\theta$.
+
+# Summary
+
+Remember: **data in, parameters in, prediction out**. The rest of the course is how those parameters get chosen.

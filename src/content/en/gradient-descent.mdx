@@ -1,0 +1,36 @@
+# What is it?
+
+**Gradient descent** updates parameters by subtracting a step size $\alpha$ times the gradient of the same MSE:
+
+$$
+\theta\leftarrow\theta-\alpha\nabla J(\theta).
+$$
+
+For a linear model $wx+b$ the Hessian $H$ is constant. Convergence holds **if and only if** $0<\alpha<2/\lambda_{\max}(H)$.
+
+# Why it matters
+
+Closed-form least squares hides the step-size question. Stretch one feature and a “safe” $\alpha$ becomes too large. That is why people standardize inputs.
+
+# Intuition
+
+The bowl’s steepest curvature $\lambda_{\max}$ forbids large leaps. We compute $\alpha_{\mathrm{crit}}=2/\lambda_{\max}$ from *your* sample Hessian. Cross it and the path explodes.
+
+# Mathematics
+
+Residual $r_i=wx_i+b-y_i$. Then
+
+$$
+\frac{\partial J}{\partial w}=\frac{2}{n}\sum_i x_i r_i,\qquad
+\frac{\partial J}{\partial b}=\frac{2}{n}\sum_i r_i.
+$$
+
+The Hessian has $H_{22}=2$ for this $1/n$ MSE (not $1/(2n)$).
+
+# Experiment
+
+Use the lab below. Default $\alpha=0.2$ is monotonic at feature scale $s=1$. Drag $s$ to $10$ and press Play: the same $\alpha$ diverges. Nothing about the algorithm changed.
+
+# Summary
+
+A learning rate is not universally small or large. It is small or large **relative to** $\lambda_{\max}$.

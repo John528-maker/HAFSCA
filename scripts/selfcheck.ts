@@ -17,6 +17,23 @@ import {
 } from "../src/lib/analysis.ts";
 import { defaultConfig, runExperiment } from "../src/lib/experiment.ts";
 import type { ModelResult } from "../src/types/experiment.ts";
+import { assertCurriculumDag, getLesson, LESSONS } from "../src/curriculum/curriculum.ts";
+import { LEARNING_PATHS } from "../src/curriculum/paths.ts";
+import {
+  GD_DEFAULTS,
+  gdStatus,
+  generateGdDataset,
+  hessianEigs,
+  linearHessian,
+  olsLinear,
+  runGradientDescent,
+} from "../src/lib/gd.ts";
+import {
+  MAX_U_CURVE_DEGREE,
+  OVERFIT_DEFAULTS,
+  runOverfitExperiment,
+  validateOverfitConfig,
+} from "../src/lib/overfit.ts";
 
 let passed = 0;
 let failed = 0;
@@ -327,6 +344,100 @@ console.log("12. Detection calibration constants");
   assert(
     DD_THRESHOLDS.MIN_RELIABLE_TEST_SIZE === 160,
     "True verdict requires at least 160 test points",
+  );
+}
+
+console.log("13. Curriculum DAG and paths");
+{
+  let dagOk = true;
+  try {
+    assertCurriculumDag();
+  } catch (error) {
+    dagOk = false;
+    console.error(error);
+  }
+  assert(dagOk, "curriculum DAG has no cycles and registered experiments");
+  assert(LESSONS.length === 18, `18 curriculum nodes (got ${LESSONS.length})`);
+  for (const path of LEARNING_PATHS) {
+    for (const slug of path.slugs) {
+      assert(getLesson(slug) !== undefined, `path ${path.id} slug ${slug} exists`);
+    }
+  }
+}
+
+console.log("14. Gradient descent C §3 contract");
+{
+  const data = generateGdDataset(42, 0, 1);
+  const hess = linearHessian(data.x);
+  assert(hess.d === 2, `H22 === 2 (got ${hess.d})`);
+  const { lambdaMax } = hessianEigs(hess);
+  const alphaCrit = 2 / lambdaMax;
+  assert(
+    alphaCrit > 0.7 && alphaCrit < 1.3,
+    `seed 42 s=1 α_crit ∈ (0.7, 1.3) (got ${alphaCrit})`,
+  );
+  assert(
+    almostEqual(alphaCrit, 0.99503, 5e-3),
+    `seed 42 s=1 α_crit ≈ 0.99503 (got ${alphaCrit})`,
+  );
+  const ols = olsLinear(data.x, data.y);
+  assert(
+    almostEqual(ols.w, 0.8, 1e-3) && almostEqual(ols.b, 0.15, 1e-3),
+    `noiseless OLS (w,b) ≈ (0.8, 0.15) (got ${ols.w}, ${ols.b})`,
+  );
+
+  const scaled = generateGdDataset(42, 0, 10);
+  const scaledOls = olsLinear(scaled.x, scaled.y);
+  assert(
+    almostEqual(scaledOls.w, 0.08, 1e-3) && almostEqual(scaledOls.b, 0.15, 1e-3),
+    `noiseless OLS at s=10 is (0.8/s, 0.15) (got ${scaledOls.w}, ${scaledOls.b})`,
+  );
+  const alphaCrit10 = 2 / hessianEigs(linearHessian(scaled.x)).lambdaMax;
+  assert(
+    alphaCrit10 > 0.015 && alphaCrit10 < 0.03,
+    `s=10 α_crit ≈ 0.02 so default α=0.2 diverges (got ${alphaCrit10})`,
+  );
+  assert(
+    gdStatus(GD_DEFAULTS.alpha, hessianEigs(linearHessian(scaled.x)).lambdaMax) ===
+      "diverging",
+    "default α=0.2 diverges at s=10",
+  );
+  const divergedRun = runGradientDescent(
+    scaled.x,
+    scaled.y,
+    GD_DEFAULTS.w0,
+    GD_DEFAULTS.b0,
+    GD_DEFAULTS.alpha,
+    GD_DEFAULTS.iterations,
+  );
+  assert(divergedRun.diverged, "measured GD path diverges at s=10, α=0.2");
+}
+
+console.log("15. Overfitting cap and seed notes");
+{
+  let rejected = false;
+  try {
+    validateOverfitConfig({ ...OVERFIT_DEFAULTS, maxDegree: 13 });
+  } catch {
+    rejected = true;
+  }
+  assert(rejected, "maxDegree 13 is rejected");
+  const capped = validateOverfitConfig({
+    ...OVERFIT_DEFAULTS,
+    maxDegree: MAX_U_CURVE_DEGREE,
+  });
+  assert(capped.maxDegree === 12, "cap 12 is accepted");
+
+  const seed42 = runOverfitExperiment({ ...OVERFIT_DEFAULTS, randomSeed: 42 });
+  assert(seed42.note === "u-curve", `seed 42 is a U-curve (got ${seed42.note})`);
+  assert(
+    seed42.bestDegree >= 3 && seed42.bestDegree <= 5,
+    `seed 42 best degree on plateau 3–5 (got ${seed42.bestDegree})`,
+  );
+  const seed1 = runOverfitExperiment({ ...OVERFIT_DEFAULTS, randomSeed: 1 });
+  assert(
+    seed1.note === "no-sweet-spot",
+    `seed 1 has no clean sweet spot (got ${seed1.note}, best ${seed1.bestDegree})`,
   );
 }
 

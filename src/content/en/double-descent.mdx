@@ -1,0 +1,21 @@
+## What is it?
+
+**Double descent** is the claim that test error can rise near the interpolation threshold $p=n$ and then fall again as the model grows further.
+
+## What this lab actually shows
+
+On this polynomial engine, measured against the **true function** across many seeds, a second descent exists **geometrically** but does **not** reliably return to error competitive with the first minimum. The striking, reproducible fact is a **variance explosion** near interpolation, then **partial recovery**.
+
+The experiment therefore does **not** promise “true double descent” as the default outcome. If a run reports partial recovery, that is the honest result.
+
+## Why two test curves?
+
+Primary test MSE is against $f$ (no label noise). Secondary is against noisy held-out labels. Noise adds a $\sigma^2$ pedestal to both the first and second minima and can make a ratio look closer to $1$ than the signal deserves.
+
+## Experiment
+
+Use the lab below. Interpolation is reported as the theoretical degree $n_{\mathrm{train}}-1$, not a magic train-MSE cutoff.
+
+## Summary
+
+Treat a huge peak near $p=n$ as **model behavior**, not as the computer breaking — unless the run is marked as a numerical failure (non-finite values).
