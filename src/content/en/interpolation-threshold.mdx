@@ -1,0 +1,29 @@
+## What is it?
+
+The **interpolation threshold** is the complexity where the number of parameters catches the number of **training** points:
+
+$$
+p=n_{\mathrm{train}}.
+$$
+
+For polynomials on this site, $p=d+1$, so the theoretical degree is $n_{\mathrm{train}}-1$. The flagship lab reports that formula. It does **not** hunt for a train-MSE cutoff.
+
+## Why it matters
+
+Below the threshold, least squares is typically overdetermined: you cannot hit every training $y$ exactly (unless the data happen to lie on the model). At and beyond it, interpolators exist. Double descent is a claim about test error **near** this crossing, not a second name for overfitting.
+
+## Intuition
+
+Think of $p$ knobs and $n$ numbers to match. When $p<n$, leftover training error is normal. When $p=n$ on a generic design, there is just enough freedom to interpolate. When $p>n$, many interpolators exist and the engine picks min-norm.
+
+Interpolation of noisy labels is not “perfect learning.” Train MSE near $0$ can sit next to terrible test error. That peak is the next two lessons.
+
+## Mathematics
+
+Count parameters honestly: intercept plus degree $d$ is $d+1$ columns of $X$. The split is the one the experiment already uses. Changing `trainRatio` moves $n_{\mathrm{train}}$ and therefore moves the threshold.
+
+A tiny relative ridge means train MSE is not literally machine zero, but the **reported** threshold stays $n_{\mathrm{train}}-1$ by definition.
+
+## Summary
+
+Interpolation is $p=n_{\mathrm{train}}$, degree $n_{\mathrm{train}}-1$ on this engine. It is a count, not a vibe.

@@ -1,0 +1,33 @@
+## What is it?
+
+**Regularization** adds a penalty on complexity so the fit is not free to use every degree of freedom. The usual squared-weight penalty is ridge:
+
+$$
+\Psi(\boldsymbol{\theta})=\lVert X\boldsymbol{\theta}-y\rVert_2^2+\lambda\lVert\boldsymbol{\theta}\rVert_2^2,\qquad\lambda>0.
+$$
+
+Setting $\nabla\Psi=\mathbf{0}$ yields $(X^{\top}X+\lambda I)\boldsymbol{\theta}=X^{\top}y$.
+
+## Why it matters
+
+Overfitting is extra capacity memorizing noise. A penalty is one way to pay for that capacity. This site **already** uses ridge inside the solver — as numerics, not as a lesson slider.
+
+## Intuition
+
+Ridge pulls $\boldsymbol{\theta}$ toward the origin. Small $\lambda$ barely changes a well-conditioned fit. Large $\lambda$ would flatten the model. We do **not** give you a $\lambda$ slider yet: the engine’s $\lambda$ is **relative**, not a single absolute number, and mixing those two meanings would teach the wrong knob.
+
+## Mathematics
+
+The code uses
+
+$$
+\lambda=\texttt{RIDGE}\times\operatorname{mean}(\mathrm{diag}(G)),\qquad\texttt{RIDGE}=10^{-8},
+$$
+
+where $G$ is the Gram matrix of the current solve ($X^{\top}X$ or $XX^{\top}$). Scaling by the mean diagonal keeps the penalty dimensionless as degree changes. It is small enough to leave honest interpolation phenomenology intact, and large enough to floor the worst Gram eigenvalues.
+
+This is **not** a claim that students should tune $10^{-8}$ by hand. A future lesson can expose an explicit $\lambda$ only after the product decides absolute versus relative units.
+
+## Summary
+
+Regularization is a named penalty. On this site today it is a tiny relative ridge inside the engine, not a control on the page.

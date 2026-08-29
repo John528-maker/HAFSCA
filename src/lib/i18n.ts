@@ -43,6 +43,9 @@ const en = {
     oscillating: "Oscillating",
     diverging: "Diverging",
     aha: "Lock α at 0.2 and drag feature scale to 10, then play. The same algorithm flies off the bowl because you stretched a feature.",
+    lossVsT: "Loss vs iteration",
+    logLoss: "Log J",
+    linearLoss: "Linear J",
   },
   lr: {
     title: "Live least squares",
@@ -76,6 +79,26 @@ const en = {
       "Training error falls while test error eventually rises: a U-shaped test curve, not a proof that degree 3 is uniquely best.",
     best: (degree: number, cap: number) =>
       `Best degree on the truth-target test MSE: ${degree}. Cap ${cap}.`,
+  },
+  act: {
+    title: "Activations",
+    guide:
+      "A deep chain multiplies one φ′(z) per layer (and a weight). If each factor is small, ten layers leave almost nothing. Drag depth with sigmoid, then switch to ReLU or identity.",
+    activation: "Activation",
+    saturated: "saturated",
+    sigmoidNote: "σ′ = 0.01 at z = ±log(99)",
+    chain: "1-wide chain",
+    chainNote:
+      "Live recurrence is the truth. For sigmoid, |δ_L| ≤ (|w|/4)^L is a bound, not the measured value at a₀ = 0, b = 0.",
+    bound: "Textbook bound |δ_L| ≤ (|w|/4)^L for sigmoid, shown only as a bound.",
+    exploded: "exploded",
+    dead: "Dead ReLU",
+    deadNote:
+      "ReLU φ′(0) = 0 on this site. If every z ≤ 0, the gradient in (w, b) is exactly 0 on this batch.",
+    useLeaky: "Use leaky ReLU (never fully dies)",
+    deadFrac: "Dead fraction",
+    allDead:
+      "Gradient w.r.t. (w, b) is exactly 0 on this batch. GD cannot revive this unit.",
   },
   languageToggle: "한국어",
   hero: {
@@ -273,6 +296,9 @@ const ko = {
     oscillating: "진동하며 수렴",
     diverging: "발산",
     aha: "α를 0.2에 고정하고 특성 스케일을 10으로 올린 뒤 재생해 보세요. 알고리즘은 그대로인데 특성을 늘렸기 때문에 사발을 벗어납니다.",
+    lossVsT: "반복 대비 손실",
+    logLoss: "로그 J",
+    linearLoss: "선형 J",
   },
   lr: {
     title: "실시간 최소제곱",
@@ -306,6 +332,26 @@ const ko = {
       "학습 오차는 내려가고 테스트 오차는 결국 올라갑니다. U자 곡선이지, 차수 3이 유일하게 최적이라는 증명은 아닙니다.",
     best: (degree: number, cap: number) =>
       `참 함수 기준 테스트 MSE가 가장 낮은 차수: ${degree}. 상한 ${cap}.`,
+  },
+  act: {
+    title: "활성화 함수",
+    guide:
+      "깊은 연쇄는 층마다 φ′(z)와 가중치를 곱합니다. 인자가 작으면 열 층에서 거의 남지 않습니다. 시그모이드로 깊이를 올린 뒤 ReLU나 identity로 바꿔 보세요.",
+    activation: "활성화",
+    saturated: "포화",
+    sigmoidNote: "σ′ = 0.01 인 지점 z = ±log(99)",
+    chain: "너비 1 연쇄",
+    chainNote:
+      "살아 있는 점화식이 진실입니다. 시그모이드에서 |δ_L| ≤ (|w|/4)^L 은 상한이지, a₀ = 0, b = 0 에서의 측정값이 아닙니다.",
+    bound: "시그모이드 교과서 상한 |δ_L| ≤ (|w|/4)^L — 측정값이 아니라 상한으로만 표시합니다.",
+    exploded: "폭발",
+    dead: "죽은 ReLU",
+    deadNote:
+      "이 사이트에서 ReLU φ′(0) = 0입니다. 모든 z ≤ 0이면 이 배치에서 (w, b)에 대한 기울기는 정확히 0입니다.",
+    useLeaky: "leaky ReLU 사용 (완전히 죽지 않음)",
+    deadFrac: "죽은 비율",
+    allDead:
+      "이 배치에서 (w, b)에 대한 기울기는 정확히 0입니다. GD가 이 유닛을 되살릴 수 없습니다.",
   },
   languageToggle: "English",
   hero: {
@@ -502,6 +548,9 @@ export type Messages = {
     oscillating: string;
     diverging: string;
     aha: string;
+    lossVsT: string;
+    logLoss: string;
+    linearLoss: string;
   };
   lr: {
     title: string;
@@ -530,6 +579,22 @@ export type Messages = {
     noSweet: string;
     uCurve: string;
     best: (degree: number, cap: number) => string;
+  };
+  act: {
+    title: string;
+    guide: string;
+    activation: string;
+    saturated: string;
+    sigmoidNote: string;
+    chain: string;
+    chainNote: string;
+    bound: string;
+    exploded: string;
+    dead: string;
+    deadNote: string;
+    useLeaky: string;
+    deadFrac: string;
+    allDead: string;
   };
   languageToggle: string;
   hero: {

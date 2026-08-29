@@ -1,0 +1,45 @@
+## 무엇인가?
+
+**정규 방정식**은 MSE 기울기를 영으로 두어 얻는 선형 연립입니다.
+
+$$
+X^{\top}X\,\boldsymbol{\theta}=X^{\top}y.
+$$
+
+“정규”인 이유는 잔차 $\mathbf{r}=X\boldsymbol{\theta}^\star-y$가 $X$의 열공간과 직교하기 때문입니다: $X^{\top}\mathbf{r}=\mathbf{0}$. 잔차 부호는 예측 빼기 타깃으로, 이 사이트의 모든 실험과 같습니다.
+
+## 왜 중요한가?
+
+실시간 최소제곱 직선과 모든 다항 적합이 **바로** 이 연립입니다(아주 작은 상대 ridge를 더해서). 경사 하강법은 같은 $J$를 걷고, 이 수업은 임계점 방정식을 적습니다.
+
+## 직관
+
+OLS는 $X\boldsymbol{\theta}$가 $y$에 가장 가까운, $X$ 열공간 위의 점이기를 바랍니다. 남은 오차는 그 부분공간에 수직이어야 합니다.
+
+손잡이가 표본보다 많으면 많은 $\boldsymbol{\theta}$가 $y$를 정확히 맞춥니다. 그때 엔진은 $\lVert\boldsymbol{\theta}\rVert_2$가 가장 작은 보간자를 고릅니다.
+
+## 수학
+
+**긴 경우** ($p\le n$, 열이 독립):
+
+$$
+\boldsymbol{\theta}^\star=(X^{\top}X)^{-1}X^{\top}y.
+$$
+
+**넓은 경우** ($p>n$, 행이 독립), 최소 노름 보간자:
+
+$$
+\boldsymbol{\theta}_{\mathrm{mn}}=X^{\top}(XX^{\top})^{-1}y.
+$$
+
+엔진은 실제로 **상대 ridge** 버전을 풉니다. $\lambda=\texttt{RIDGE}\cdot\overline{\mathrm{diag}}(G)$, $\texttt{RIDGE}=10^{-8}$. 수치적 바닥이지 학생용 슬라이더가 아닙니다. $\lambda>0$이면 primal($p\le n$)과 dual($p>n$) ridge 공식은 같습니다.
+
+검산: 점 $(1,1),\ (2,2),\ (3,2)$, 모형 $\hat y=\theta_1+\theta_2 x$이면
+
+$$
+X^{\top}X=\begin{pmatrix}3&6\\6&14\end{pmatrix},\qquad X^{\top}y=\begin{pmatrix}5\\11\end{pmatrix}.
+$$
+
+## 요약
+
+차트와 같은 손실입니다. $\nabla J=\mathbf{0}$이 선형 연립을 만들고, 엔진의 ridge는 상대적이고 작습니다.

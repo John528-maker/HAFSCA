@@ -1,0 +1,41 @@
+## What is it?
+
+The **derivative** of a one-parameter loss $J(\theta)$ is the slope of the best local linear approximation:
+
+$$
+J'(\theta)=\lim_{h\to 0}\frac{J(\theta+h)-J(\theta)}{h}.
+$$
+
+If $J'(\theta)<0$, a tiny increase in $\theta$ **decreases** $J$. The derivative reports the slope. It does not, by itself, move $\theta$.
+
+## Why it matters
+
+Every later tool — partials, the gradient, gradient descent — is this one idea with more coordinates. Naming the slope first keeps “the computer found a fit” from sounding like magic.
+
+## Intuition
+
+Think of an exchange rate: nudge $\theta$ up by a hair, how much does $J$ change? Positive slope means “uphill if you increase $\theta$.”
+
+## Mathematics
+
+This site’s loss is $J(\theta)=\frac1n\sum_i(\theta x_i-y_i)^2$ for a one-parameter model $\hat y=\theta x$. Term $i$ has residual $u_i=\theta x_i-y_i$. Chain rule:
+
+$$
+\frac{\mathrm{d}}{\mathrm{d}\theta}u_i^2=2u_i\cdot x_i,
+$$
+
+so
+
+$$
+J'(\theta)=\frac{2}{n}\sum_{i=1}^{n}(\theta x_i-y_i)\,x_i.
+$$
+
+The extra $2$ is the same $2$ that makes $H_{22}=2$ on the two-parameter lab. There is still **no** $\tfrac12$ in $J$.
+
+## Derivation check
+
+$n=2$, $(x,y)=(1,3)$ and $(2,5)$. Then $J'(\theta)=5\theta-13$. At $\theta=2$, $J'(2)=-3$: increasing $\theta$ lowers the loss. The critical point $5\theta=13$ is $\theta^\star=2.6$, which is also the normal-equation answer $X^\top X=5$, $X^\top y=13$.
+
+## Summary
+
+A derivative is a local slope of $J$, with residual $\hat y-y$ and the site’s $1/n$ MSE.

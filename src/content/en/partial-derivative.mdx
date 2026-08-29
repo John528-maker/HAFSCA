@@ -1,0 +1,34 @@
+## What is it?
+
+A **partial derivative** is an ordinary derivative in one coordinate while every other parameter is held fixed:
+
+$$
+\frac{\partial J}{\partial\theta_j}(\boldsymbol{\theta})
+=\lim_{h\to 0}\frac{J(\boldsymbol{\theta}+h\mathbf{e}_j)-J(\boldsymbol{\theta})}{h}.
+$$
+
+The live line $\hat y=wx+b$ already has two such numbers: one for $w$, one for $b$.
+
+## Why it matters
+
+Models on this site have $p=d+1$ parameters, not one. A single $J'(\theta)$ is not enough. Partials are the components that the **gradient** will stack into a vector.
+
+## Intuition
+
+Stand on the loss bowl. Face only the $w$-axis: that slope is $\partial J/\partial w$. Face only the $b$-axis: $\partial J/\partial b$. You have not yet chosen a walking direction — that is the next lesson.
+
+## Mathematics
+
+Residual $r_i=\hat y_i-y_i=(X\boldsymbol{\theta}-y)_i$. For $1/n$ MSE,
+
+$$
+\frac{\partial J}{\partial\theta_j}=\frac{2}{n}\sum_{i=1}^{n}r_i\,X_{ij}.
+$$
+
+For intercept plus slope, $X_{i1}=1$ and $X_{i2}=x_i$, which recovers the two formulas on the gradient-descent page.
+
+Holding the other coordinates fixed is not optional wording. If you let $b$ move while you differentiate in $w$, you are no longer computing a partial.
+
+## Summary
+
+Each partial answers: “if I nudge **this** knob only, what happens to $J$?”

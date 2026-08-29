@@ -78,7 +78,7 @@ export const LESSONS: LessonMeta[] = [
       ko: "한 매개변수에 대한 손실의 기울기입니다.",
     },
     prerequisites: ["loss-function"],
-    published: false,
+    published: true,
   },
   {
     slug: "partial-derivative",
@@ -90,7 +90,7 @@ export const LESSONS: LessonMeta[] = [
       ko: "나머지 매개변수를 고정하고 하나만 미분합니다.",
     },
     prerequisites: ["derivative"],
-    published: false,
+    published: true,
   },
   {
     slug: "gradient",
@@ -102,7 +102,8 @@ export const LESSONS: LessonMeta[] = [
       ko: "모든 편도함수를 모은 벡터, 곧 오르막 방향입니다.",
     },
     prerequisites: ["partial-derivative"],
-    published: false,
+    experimentId: "activations",
+    published: true,
   },
   {
     slug: "gradient-descent",
@@ -113,7 +114,7 @@ export const LESSONS: LessonMeta[] = [
       en: "Step opposite the gradient. Too large a step diverges.",
       ko: "기울기 반대 방향으로 한 걸음. 너무 크면 발산합니다.",
     },
-    prerequisites: ["loss-function"],
+    prerequisites: ["gradient"],
     experimentId: "gradient-descent",
     published: true,
   },
@@ -127,7 +128,7 @@ export const LESSONS: LessonMeta[] = [
       ko: "사발과 골짜기, 그리고 지형이 중요한 이유입니다.",
     },
     prerequisites: ["gradient-descent"],
-    published: false,
+    published: true,
   },
   {
     slug: "normal-equations",
@@ -139,7 +140,7 @@ export const LESSONS: LessonMeta[] = [
       ko: "같은 손실을 기울기 = 0으로 한 번에 풉니다.",
     },
     prerequisites: ["loss-function"],
-    published: false,
+    published: true,
   },
   {
     slug: "generalization",
@@ -176,7 +177,7 @@ export const LESSONS: LessonMeta[] = [
       ko: "복잡도에 벌점을 줍니다. 엔진은 이미 작은 ridge를 씁니다.",
     },
     prerequisites: ["overfitting"],
-    published: false,
+    published: true,
   },
   {
     slug: "interpolation-threshold",
@@ -188,7 +189,7 @@ export const LESSONS: LessonMeta[] = [
       ko: "매개변수 수가 학습 점 수와 같아지는 지점, p = n입니다.",
     },
     prerequisites: ["overfitting"],
-    published: false,
+    published: true,
   },
   {
     slug: "conditioning",
@@ -200,7 +201,7 @@ export const LESSONS: LessonMeta[] = [
       ko: "공식이 맞아도 p가 n에 가까워지면 숫자가 터질 수 있습니다.",
     },
     prerequisites: ["interpolation-threshold"],
-    published: false,
+    published: true,
   },
   {
     slug: "double-descent",

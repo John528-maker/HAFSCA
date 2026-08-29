@@ -13,6 +13,15 @@ import {
   type GdPoint,
 } from "@/lib/gd";
 import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 const W_MIN = -2.5;
 const W_MAX = 2.5;
@@ -30,6 +39,7 @@ export default function GradientDescentLab() {
   const [iterations, setIterations] = useState<number>(GD_DEFAULTS.iterations);
   const [noise, setNoise] = useState<number>(GD_DEFAULTS.noise);
   const [seed, setSeed] = useState<number>(GD_DEFAULTS.seed);
+  const [logLoss, setLogLoss] = useState(true);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const runIdentity = `${seed}:${noise}:${scale}:${alpha}:${w0}:${b0}:${iterations}`;
   const [play, setPlay] = useState({ identity: runIdentity, cursor: 0, playing: false });
@@ -109,6 +119,10 @@ export default function GradientDescentLab() {
   });
 
   const trail = run.path.slice(0, cursor + 1);
+  const lossSeries = trail.map((row) => ({
+    t: row.t,
+    loss: logLoss ? Math.max(row.loss, 1e-12) : row.loss,
+  }));
   const polyline = trail
     .map((row) => {
       const p = toPx(row.w, row.b);
@@ -243,6 +257,55 @@ export default function GradientDescentLab() {
             />
           )}
         </svg>
+      </div>
+
+      <div className="max-w-md space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted">
+            {g.lossVsT}
+          </h4>
+          <div className="flex rounded-md border border-border text-xs">
+            <button
+              type="button"
+              className={`px-2 py-1 ${logLoss ? "bg-accent text-white" : "bg-card text-muted"}`}
+              onClick={() => setLogLoss(true)}
+            >
+              {g.logLoss}
+            </button>
+            <button
+              type="button"
+              className={`px-2 py-1 ${!logLoss ? "bg-accent text-white" : "bg-card text-muted"}`}
+              onClick={() => setLogLoss(false)}
+            >
+              {g.linearLoss}
+            </button>
+          </div>
+        </div>
+        <div className="h-40 w-full">
+          <ResponsiveContainer>
+            <LineChart
+              data={lossSeries}
+              margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e2" />
+              <XAxis dataKey="t" tick={{ fontSize: 11 }} />
+              <YAxis
+                scale={logLoss ? "log" : "linear"}
+                domain={logLoss ? [1e-12, "auto"] : ["auto", "auto"]}
+                tick={{ fontSize: 11 }}
+                width={48}
+              />
+              <Tooltip />
+              <Line
+                type="monotone"
+                dataKey="loss"
+                stroke="#dc2626"
+                dot={false}
+                isAnimationActive={false}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       </div>
     </div>
   );

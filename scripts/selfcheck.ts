@@ -17,7 +17,7 @@ import {
 } from "../src/lib/analysis.ts";
 import { defaultConfig, runExperiment } from "../src/lib/experiment.ts";
 import type { ModelResult } from "../src/types/experiment.ts";
-import { assertCurriculumDag, getLesson, LESSONS } from "../src/curriculum/curriculum.ts";
+import { assertCurriculumDag, getLesson, LESSONS, publishedLessons } from "../src/curriculum/curriculum.ts";
 import { LEARNING_PATHS } from "../src/curriculum/paths.ts";
 import {
   GD_DEFAULTS,
@@ -42,6 +42,14 @@ import {
   olsRankStatus,
   type OlsPoint,
 } from "../src/lib/ols.ts";
+import {
+  activationPhiPrime,
+  reluDeadFraction,
+  runActivationChain,
+  sigmoid,
+  sigmoidPrime,
+  SIGMOID_SATURATION_Z,
+} from "../src/lib/activations.ts";
 
 let passed = 0;
 let failed = 0;
@@ -366,6 +374,10 @@ console.log("13. Curriculum DAG and paths");
   }
   assert(dagOk, "curriculum DAG has no cycles and registered experiments");
   assert(LESSONS.length === 18, `18 curriculum nodes (got ${LESSONS.length})`);
+  assert(
+    publishedLessons().length === 16,
+    `16 published lessons, nets deferred (got ${publishedLessons().length})`,
+  );
   for (const path of LEARNING_PATHS) {
     for (const slug of path.slugs) {
       assert(getLesson(slug) !== undefined, `path ${path.id} slug ${slug} exists`);
@@ -501,6 +513,52 @@ console.log("16. Live OLS C §2 contract");
   const flatMetrics = olsMetrics(flat, flatFit.w!, flatFit.b!);
   assert(flatMetrics.r2 === null, "SST=0 leaves R² undefined");
   assert(almostEqual(flatFit.w!, 0, 1e-6), `flat y → w≈0 (got ${flatFit.w})`);
+}
+
+console.log("17. Activations C §5 contract");
+{
+  assert(almostEqual(sigmoid(0), 0.5), "σ(0)=0.5");
+  assert(almostEqual(sigmoidPrime(0), 0.25), "σ′(0)=0.25");
+  assert(
+    almostEqual(sigmoidPrime(SIGMOID_SATURATION_Z), 0.01, 1e-4),
+    `σ′(log 99)≈0.01 (got ${sigmoidPrime(SIGMOID_SATURATION_Z)})`,
+  );
+  assert(
+    almostEqual(sigmoidPrime(-SIGMOID_SATURATION_Z), 0.01, 1e-4),
+    `σ′(−log 99)≈0.01 (got ${sigmoidPrime(-SIGMOID_SATURATION_Z)})`,
+  );
+  assert(activationPhiPrime("relu", 0) === 0, "ReLU φ′(0)=0 (site convention)");
+  assert(activationPhiPrime("leaky-relu", 0) === 1, "leaky ReLU φ′(0)=1");
+  const idChain = runActivationChain("identity", 12, 1, 0, 0.4);
+  const idLast = idChain.steps.at(-1);
+  assert(
+    !idChain.exploded && idLast !== undefined && almostEqual(idLast.delta, 1),
+    `identity w=1 → δ_L=1 (got ${idLast?.delta})`,
+  );
+  const dead = reluDeadFraction(1, -3);
+  assert(dead.fraction === 1, `ReLU w=1, b=−3, x∈[−2,2] all dead (got ${dead.fraction})`);
+  const sigmoidChain = runActivationChain("sigmoid", 10, 1, 0, 0);
+  const sigLast = sigmoidChain.steps.at(-1);
+  assert(
+    !sigmoidChain.exploded &&
+      sigLast !== undefined &&
+      Math.abs(sigLast.delta) < 1e-5 &&
+      Math.abs(sigLast.delta) !== 0.25 ** 10,
+    `sigmoid chain δ_10 is tiny and not (1/4)^10 (got ${sigLast?.delta})`,
+  );
+  assert(
+    getLesson("gradient")?.experimentId === "activations",
+    "activations lab is attached to the gradient lesson",
+  );
+  assert(
+    getLesson("gradient-descent")?.prerequisites.includes("gradient") === true,
+    "GD prerequisite is gradient once calculus is published",
+  );
+  assert(
+    getLesson("neural-network")?.published === false &&
+      getLesson("backpropagation")?.published === false,
+    "neural-network and backpropagation stay unpublished",
+  );
 }
 
 console.log(`\n${passed} passed, ${failed} failed`);

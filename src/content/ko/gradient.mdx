@@ -1,0 +1,42 @@
+## 무엇인가?
+
+$J$의 **기울기 벡터**는 모든 편도함수를 세로로 모은 것입니다.
+
+$$
+\nabla J(\boldsymbol{\theta})=\begin{pmatrix}\partial J/\partial\theta_1\\ \vdots\\ \partial J/\partial\theta_p\end{pmatrix}.
+$$
+
+가장 **가파른 오르막** 방향입니다. 경사 하강법은 그 반대로 걷습니다.
+
+## 왜 중요한가?
+
+학습 루프의 역방향 패스는 “$\nabla J$(또는 배치 추정)를 만드는 일”입니다. 이 사이트의 닫힌 형식 최소제곱은 그 벡터를 적지 않고 임계점으로 바로 갑니다. 아래 실험은 그래도 $\varphi'$가 필요합니다. 합성된 사상은 층마다 도함수를 곱하기 때문입니다.
+
+## 직관
+
+손실 곡면 위에 서 있으면 $\nabla J$는 오르막 나침반입니다. 크기는 가파름입니다. 나침반의 각 좌표가 바로 앞 수업의 편도함수입니다.
+
+## 수학
+
+이 사이트의 MSE에서는
+
+$$
+\nabla J(\boldsymbol{\theta})=\frac{2}{n}X^{\top}(X\boldsymbol{\theta}-y)=\frac{2}{n}X^{\top}\mathbf{r}.
+$$
+
+한 매개변수 도함수와 같은 검산: $X=(1,2)^\top$, $y=(3,5)^\top$, $\theta=2$이면 $\mathbf{r}=(-1,-1)^\top$이고 $\nabla J(2)=-3$으로 $J'(2)=-3$과 같습니다.
+
+## 실험
+
+아래는 신경망이 **아닙니다**. $\varphi$와 $\varphi'$를 **서로 다른 두 차트**로 그리고, 너비 1인 연쇄
+
+$$
+a_\ell=\varphi(w\,a_{\ell-1}+b),\qquad
+\delta_\ell=\varphi'(w\,a_{\ell-1}+b)\,w\,\delta_{\ell-1}
+$$
+
+를 보여 줍니다. 살아 있는 점화식이 진실입니다. 시그모이드에서 기본 $a_0=0$, $b=0$일 때 $\delta_L=(1/4)^L$이라고 **말하지 마세요**. 활성값이 움직이므로 교과서 부등식 $\lvert\delta_L\rvert\le(\lvert w\rvert/4)^L$은 측정값이 아니라 상한일 뿐입니다. ReLU는 이 사이트의 약속 $\varphi'(0)=0$, leaky ReLU는 $\varphi'(0)=1$입니다.
+
+## 요약
+
+기울기 벡터는 오르막 방향입니다. 활성화 도함수는 깊은 연쇄가 곱하는 인자입니다.
