@@ -10,24 +10,28 @@ Setting $\nabla\Psi=\mathbf{0}$ yields $(X^{\top}X+\lambda I)\boldsymbol{\theta}
 
 ## Why it matters
 
-Overfitting is extra capacity memorizing noise. A penalty is one way to pay for that capacity. This site **already** uses ridge inside the solver — as numerics, not as a lesson slider.
+Overfitting is extra capacity memorizing noise. A penalty is one way to pay for that capacity. The lever can be $\lambda$, not a smaller degree.
 
 ## Intuition
 
-Ridge pulls $\boldsymbol{\theta}$ toward the origin. Small $\lambda$ barely changes a well-conditioned fit. Large $\lambda$ would flatten the model. We do **not** give you a $\lambda$ slider yet: the engine’s $\lambda$ is **relative**, not a single absolute number, and mixing those two meanings would teach the wrong knob.
+Ridge pulls $\boldsymbol{\theta}$ toward the **origin in Chebyshev coordinates**. It does not know the true cubic $(0,0.2,0,0.7)$. Drag $\rho$ up and a wiggly degree-$10$ curve relaxes; train error rises while test error may dip, then both go to the zero-model floor.
 
 ## Mathematics
 
-The code uses
+This lab uses **relative** ridge, the same units as the engine:
 
 $$
-\lambda=\texttt{RIDGE}\times\operatorname{mean}(\mathrm{diag}(G)),\qquad\texttt{RIDGE}=10^{-8},
+\lambda=\rho\cdot\operatorname{mean}(\mathrm{diag}(X^{\top}X)).
 $$
 
-where $G$ is the Gram matrix of the current solve ($X^{\top}X$ or $XX^{\top}$). Scaling by the mean diagonal keeps the penalty dimensionless as degree changes. It is small enough to leave honest interpolation phenomenology intact, and large enough to floor the worst Gram eigenvalues.
+The double-descent solver keeps $\rho=\texttt{RIDGE}=10^{-8}$ so interpolation phenomenology survives. Here you move $\rho$ on a log scale. $\log_{10}\rho=0$ is $\rho=1$, not “off.” Larger $\rho$ is to the **right** (the opposite of some glmnet plots).
 
-This is **not** a claim that students should tune $10^{-8}$ by hand. A future lesson can expose an explicit $\lambda$ only after the product decides absolute versus relative units.
+We do **not** mix in an absolute $\lambda$ slider. That would be a different knob from the engine.
+
+## Experiment
+
+Freeze an overflexible polynomial (default degree $10$). The path is one primal solve per $\rho$ with $p\le n$. If this seed has no interior test-error dip, the note will say so.
 
 ## Summary
 
-Regularization is a named penalty. On this site today it is a tiny relative ridge inside the engine, not a control on the page.
+Regularization is a named penalty in **relative** units. The engine’s tiny $\rho$ is numerics; this page is the same formula with a student lever.

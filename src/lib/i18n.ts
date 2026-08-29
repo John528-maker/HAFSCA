@@ -117,6 +117,25 @@ const en = {
     spaghetti: "Fits (clipped to [−4, 4])",
     bars: "Stacked debiased bias² + variance + σ² versus degree",
   },
+  ridge: {
+    title: "Ridge path",
+    guide:
+      "The lever is relative ρ, not a smaller degree. Drag it and the wiggly degree-10 fit relaxes. Ridge shrinks toward 0 in Chebyshev coordinates, not toward the true cubic.",
+    relative:
+      "Applied λ = ρ × mean(diag G). The double-descent engine keeps ρ = 10⁻⁸. This slider uses the same units.",
+    degree: "Degree d",
+    noise: "Noise σ",
+    seed: "Seed",
+    train: "Train MSE",
+    test: "Test MSE vs f",
+    dip: "This sample has an interior test-error dip along the path.",
+    noDip: "This sample has no interior dip — try another seed. That is allowed.",
+    axis: "x is log₁₀ ρ, larger ρ to the right (more shrinkage).",
+    shrinkNote: "Ridge does not know the true cubic (0, 0.2, 0, 0.7).",
+    curve: "Fit vs true cubic",
+    mse: "Train and truth-target test MSE vs log₁₀ ρ",
+    coefs: "Chebyshev coefficients vs log₁₀ ρ",
+  },
   languageToggle: "한국어",
   hero: {
     eyebrow: "AI Research Lab",
@@ -387,6 +406,25 @@ const ko = {
     spaghetti: "적합 곡선 ([−4, 4]로 자름)",
     bars: "차수별 보정 편향² + 분산 + σ² 누적",
   },
+  ridge: {
+    title: "Ridge 경로",
+    guide:
+      "손잡이는 상대 ρ이지, 더 작은 차수가 아닙니다. 움직이면 울퉁불퉁한 차수 10 적합이 풀립니다. Ridge는 참 삼차식이 아니라 체비쇼프 원점으로 줄어듭니다.",
+    relative:
+      "적용되는 λ = ρ × mean(diag G). 이중 하강 엔진은 ρ = 10⁻⁸을 유지합니다. 이 슬라이더는 같은 단위입니다.",
+    degree: "차수 d",
+    noise: "노이즈 σ",
+    seed: "시드",
+    train: "학습 MSE",
+    test: "참 함수 테스트 MSE",
+    dip: "이 표본은 경로 안에 테스트 오차 골이 있습니다.",
+    noDip: "이 표본은 내부 골이 없습니다. 시드를 바꿔 보세요. 그것도 허용됩니다.",
+    axis: "가로축은 log₁₀ ρ이고, 오른쪽이 더 큰 ρ(더 강한 수축)입니다.",
+    shrinkNote: "Ridge는 참 삼차식 (0, 0.2, 0, 0.7)을 알지 못합니다.",
+    curve: "적합 vs 참 삼차식",
+    mse: "학습 MSE와 참 함수 테스트 MSE vs log₁₀ ρ",
+    coefs: "체비쇼프 계수 vs log₁₀ ρ",
+  },
   languageToggle: "English",
   hero: {
     eyebrow: "AI Research Lab",
@@ -644,6 +682,23 @@ export type Messages = {
     direct: string;
     spaghetti: string;
     bars: string;
+  };
+  ridge: {
+    title: string;
+    guide: string;
+    relative: string;
+    degree: string;
+    noise: string;
+    seed: string;
+    train: string;
+    test: string;
+    dip: string;
+    noDip: string;
+    axis: string;
+    shrinkNote: string;
+    curve: string;
+    mse: string;
+    coefs: string;
   };
   languageToggle: string;
   hero: {

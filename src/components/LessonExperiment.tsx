@@ -4,6 +4,7 @@ import OverfittingLab from "@/components/OverfittingLab";
 import ExperimentWorkspace from "@/components/ExperimentWorkspace";
 import ActivationsLab from "@/experiments/ActivationsLab";
 import BiasVarianceLab from "@/experiments/BiasVarianceLab";
+import RidgeLab from "@/experiments/RidgeLab";
 
 export default function LessonExperiment({
   experimentId,
@@ -22,6 +23,7 @@ export default function LessonExperiment({
       </div>
     );
   }
+  if (experimentId === "ridge") return <RidgeLab />;
   if (experimentId === "double-descent") return <ExperimentWorkspace />;
   return null;
 }

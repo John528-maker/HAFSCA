@@ -1,0 +1,31 @@
+## What is it?
+
+A **neural network** is a composition of maps. The smallest useful picture is an affine layer plus a nonlinearity $\varphi$:
+
+$$
+a=\varphi(wx+b).
+$$
+
+Stacking **identity** maps collapses to one affine map. The bends of $\varphi$ are what extra depth can buy. This lesson does **not** train a net in the browser.
+
+## Why it matters
+
+Everything earlier on this site is still true: a model is $f(x;\theta)$, a loss is $J$, a gradient is $\nabla J$. A net is the same objects composed. Without naming composition, “layers” sound like a different kind of mathematics.
+
+## Intuition
+
+One ReLU is a hinge. Two ReLUs can make a bump. A sigmoid squash saturates, so $\varphi'$ dies in the tails — that is the activations lab on the gradient page, reused as the mechanism of vanishing credit.
+
+## Mathematics
+
+If every $\varphi$ is identity, $a_L=w_L\cdots w_1 x+\ldots$ is still linear in $x$. The chain rule through a nonlinearity is
+
+$$
+\frac{\partial a_\ell}{\partial a_{\ell-1}}=\varphi'(z_\ell)\,w_\ell,
+$$
+
+the same recurrence the activations experiment already runs. Backpropagation is that idea applied to every weight, not a new loss.
+
+## Summary
+
+A net is composed functions. Depth without $\varphi$ is one matrix. Training a multilayer net in the browser is out of this MVP; the chain of $\varphi'$ is already interactive.

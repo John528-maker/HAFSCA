@@ -177,6 +177,7 @@ export const LESSONS: LessonMeta[] = [
       ko: "복잡도에 벌점을 줍니다. 엔진은 이미 작은 ridge를 씁니다.",
     },
     prerequisites: ["overfitting"],
+    experimentId: "ridge",
     published: true,
   },
   {
@@ -222,11 +223,11 @@ export const LESSONS: LessonMeta[] = [
     difficulty: "advanced",
     title: { en: "Neural networks", ko: "신경망" },
     summary: {
-      en: "Composed functions. Deferred until the polynomial spine exists.",
-      ko: "합성된 함수. 다항 척추를 만든 뒤로 미룹니다.",
+      en: "Composed functions. Depth without a nonlinearity is still one affine map.",
+      ko: "합성된 함수. 비선형이 없으면 깊어도 아핀 하나와 같습니다.",
     },
     prerequisites: ["gradient-descent"],
-    published: false,
+    published: true,
   },
   {
     slug: "backpropagation",
@@ -238,7 +239,8 @@ export const LESSONS: LessonMeta[] = [
       ko: "합성 모델에 연쇄 법칙을 적용합니다.",
     },
     prerequisites: ["neural-network", "gradient"],
-    published: false,
+    experimentId: "activations",
+    published: true,
   },
 ];
 

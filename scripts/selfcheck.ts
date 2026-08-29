@@ -59,6 +59,13 @@ import {
   validateBvConfig,
 } from "../src/lib/biasVariance.ts";
 import { isExperimentId } from "../src/experiments/registry.ts";
+import {
+  RIDGE_DEFAULTS,
+  RIDGE_RHO_ENGINE,
+  fitPolynomialRelativeRidge,
+  runRidgePath,
+  validateRidgeConfig,
+} from "../src/lib/ridge.ts";
 
 let passed = 0;
 let failed = 0;
@@ -384,8 +391,8 @@ console.log("13. Curriculum DAG and paths");
   assert(dagOk, "curriculum DAG has no cycles and registered experiments");
   assert(LESSONS.length === 18, `18 curriculum nodes (got ${LESSONS.length})`);
   assert(
-    publishedLessons().length === 16,
-    `16 published lessons, nets deferred (got ${publishedLessons().length})`,
+    publishedLessons().length === 18,
+    `18 published lessons (got ${publishedLessons().length})`,
   );
   for (const path of LEARNING_PATHS) {
     for (const slug of path.slugs) {
@@ -564,9 +571,17 @@ console.log("17. Activations C §5 contract");
     "GD prerequisite is gradient once calculus is published",
   );
   assert(
-    getLesson("neural-network")?.published === false &&
-      getLesson("backpropagation")?.published === false,
-    "neural-network and backpropagation stay unpublished",
+    getLesson("neural-network")?.published === true &&
+      getLesson("backpropagation")?.published === true,
+    "neural-network and backpropagation are published as concept lessons",
+  );
+  assert(
+    getLesson("backpropagation")?.experimentId === "activations",
+    "backprop reuses the activations lab, not an in-browser net",
+  );
+  assert(
+    getLesson("regularization")?.experimentId === "ridge",
+    "regularization exposes the relative-ρ ridge path",
   );
 }
 
@@ -605,6 +620,58 @@ console.log("18. Bias–variance C §7 contract");
   assert(
     Math.abs(d3.meanDirectError - stacked) < 0.05,
     `direct (ĝ−f)² tracks debiased bias²+var (direct ${d3.meanDirectError}, stacked ${stacked})`,
+  );
+}
+
+console.log("19. Relative ridge C §6 contract");
+{
+  let rejected = false;
+  try {
+    validateRidgeConfig({
+      degree: 13,
+      datasetSize: 50,
+      trainRatio: 0.8,
+      noiseLevel: 0.25,
+      randomSeed: 42,
+    });
+  } catch {
+    rejected = true;
+  }
+  assert(rejected, "ridge degree 13 is rejected");
+  assert(isExperimentId("ridge"), "ridge is a registered experiment");
+
+  const xs = [-1, -0.5, 0, 0.5, 1];
+  const ys = xs.map((x) => 0.2 * x + 0.7 * (4 * x ** 3 - 3 * x));
+  const engine = fitPolynomial(xs, ys, 3);
+  const relative = fitPolynomialRelativeRidge(xs, ys, 3, RIDGE_RHO_ENGINE);
+  assert(
+    engine.coefficients.every((value, i) =>
+      almostEqual(value, relative.coefficients[i]!, 1e-8),
+    ),
+    "ρ = 10⁻⁸ primal ridge matches the engine fit on a well-conditioned cubic",
+  );
+  const heavy = fitPolynomialRelativeRidge(xs, ys, 3, 1e3);
+  const lightNorm = vectorNorm(relative.coefficients);
+  const heavyNorm = vectorNorm(heavy.coefficients);
+  assert(
+    heavyNorm < 0.2 * lightNorm,
+    `large ρ shrinks ‖θ‖ (engine ${lightNorm} vs ρ=1e3 ${heavyNorm})`,
+  );
+
+  const path = runRidgePath({
+    ...RIDGE_DEFAULTS,
+    degree: 10,
+    randomSeed: 42,
+  });
+  const tiny = path.path[0]!;
+  const huge = path.path.at(-1)!;
+  assert(
+    huge.coefNorm < tiny.coefNorm,
+    "path: large ρ has smaller coefficient norm than engine-scale ρ",
+  );
+  assert(
+    huge.trainMSE > tiny.trainMSE,
+    "path: large ρ raises training MSE (pays for shrinkage)",
   );
 }
 

@@ -4,6 +4,7 @@ export const EXPERIMENT_IDS = [
   "activations",
   "overfitting",
   "bias-variance",
+  "ridge",
   "double-descent",
 ] as const;
 
