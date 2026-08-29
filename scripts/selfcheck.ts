@@ -50,6 +50,15 @@ import {
   sigmoidPrime,
   SIGMOID_SATURATION_Z,
 } from "../src/lib/activations.ts";
+import {
+  BV_DEFAULTS,
+  BV_DEGREES,
+  runBiasVariance,
+  sampleVarianceM1,
+  sliceAtDegree,
+  validateBvConfig,
+} from "../src/lib/biasVariance.ts";
+import { isExperimentId } from "../src/experiments/registry.ts";
 
 let passed = 0;
 let failed = 0;
@@ -558,6 +567,44 @@ console.log("17. Activations C §5 contract");
     getLesson("neural-network")?.published === false &&
       getLesson("backpropagation")?.published === false,
     "neural-network and backpropagation stay unpublished",
+  );
+}
+
+console.log("18. Bias–variance C §7 contract");
+{
+  assert(
+    BV_DEGREES.every((degree) => degree <= MAX_U_CURVE_DEGREE) &&
+      !(BV_DEGREES as readonly number[]).includes(13),
+    "bias-variance degree grid is capped at 12",
+  );
+  let rejected = false;
+  try {
+    validateBvConfig({ ...BV_DEFAULTS, M: 7 });
+  } catch {
+    rejected = true;
+  }
+  assert(rejected, "M=7 is rejected");
+  assert(almostEqual(sampleVarianceM1([1, 3]), 2), "divisor is M−1: Var(1,3)=2");
+  assert(
+    isExperimentId("bias-variance"),
+    "bias-variance is a registered experiment",
+  );
+  const run = runBiasVariance({ ...BV_DEFAULTS, M: 8, n: 20 }, 21);
+  const d0 = sliceAtDegree(run, 0);
+  const d3 = sliceAtDegree(run, 3);
+  const d12 = sliceAtDegree(run, 12);
+  assert(
+    d0.meanDebiasedBias2 > d3.meanDebiasedBias2,
+    `degree 0 is more biased than 3 (${d0.meanDebiasedBias2} vs ${d3.meanDebiasedBias2})`,
+  );
+  assert(
+    d12.meanVariance > d3.meanVariance,
+    `degree 12 fans out more than 3 (${d12.meanVariance} vs ${d3.meanVariance})`,
+  );
+  const stacked = d3.meanDebiasedBias2 + d3.meanVariance;
+  assert(
+    Math.abs(d3.meanDirectError - stacked) < 0.05,
+    `direct (ĝ−f)² tracks debiased bias²+var (direct ${d3.meanDirectError}, stacked ${stacked})`,
   );
 }
 

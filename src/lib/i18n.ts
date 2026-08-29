@@ -100,6 +100,23 @@ const en = {
     allDead:
       "Gradient w.r.t. (w, b) is exactly 0 on this batch. GD cannot revive this unit.",
   },
+  bv: {
+    title: "Bias and variance",
+    guide:
+      "Each faint line is a different dataset from the same cubic process. Complexity makes them disagree. Disagreement is variance.",
+    notHoldout:
+      "These bars are grid-versus-the-true-cubic plus a known σ². They are not holdout test MSE.",
+    degree: "Degree d",
+    noise: "Noise σ",
+    seed: "Seed",
+    run: "Resample M datasets",
+    smallM: "M is small, so the variance bars themselves jitter.",
+    bias2: "Debiased bias²",
+    variance: "Variance (M−1)",
+    direct: "Direct mean (ĝ − f)²",
+    spaghetti: "Fits (clipped to [−4, 4])",
+    bars: "Stacked debiased bias² + variance + σ² versus degree",
+  },
   languageToggle: "한국어",
   hero: {
     eyebrow: "AI Research Lab",
@@ -353,6 +370,23 @@ const ko = {
     allDead:
       "이 배치에서 (w, b)에 대한 기울기는 정확히 0입니다. GD가 이 유닛을 되살릴 수 없습니다.",
   },
+  bv: {
+    title: "편향과 분산",
+    guide:
+      "흐린 선 하나가 같은 삼차 과정에서 나온 다른 데이터입니다. 복잡도가 커지면 선들이 갈라집니다. 그 불일치가 분산입니다.",
+    notHoldout:
+      "막대는 참 삼차 함수와 격자 위 비교에 알려진 σ²를 더한 값입니다. 홀드아웃 테스트 MSE가 아닙니다.",
+    degree: "차수 d",
+    noise: "노이즈 σ",
+    seed: "시드",
+    run: "데이터셋 M개 다시 뽑기",
+    smallM: "M이 작아서 분산 막대 자체도 흔들립니다.",
+    bias2: "보정한 편향²",
+    variance: "분산 (M−1)",
+    direct: "직접 평균 (ĝ − f)²",
+    spaghetti: "적합 곡선 ([−4, 4]로 자름)",
+    bars: "차수별 보정 편향² + 분산 + σ² 누적",
+  },
   languageToggle: "English",
   hero: {
     eyebrow: "AI Research Lab",
@@ -595,6 +629,21 @@ export type Messages = {
     useLeaky: string;
     deadFrac: string;
     allDead: string;
+  };
+  bv: {
+    title: string;
+    guide: string;
+    notHoldout: string;
+    degree: string;
+    noise: string;
+    seed: string;
+    run: string;
+    smallM: string;
+    bias2: string;
+    variance: string;
+    direct: string;
+    spaghetti: string;
+    bars: string;
   };
   languageToggle: string;
   hero: {
