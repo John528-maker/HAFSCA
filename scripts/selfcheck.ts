@@ -60,6 +60,11 @@ import {
 } from "../src/lib/biasVariance.ts";
 import { isExperimentId } from "../src/experiments/registry.ts";
 import {
+  BACKPROP_CHECK_DEFAULTS,
+  runBackpropCheck,
+} from "../src/lib/backpropCheck.ts";
+import { parseProgress } from "../src/lib/progress.ts";
+import {
   RIDGE_DEFAULTS,
   RIDGE_RHO_ENGINE,
   fitPolynomialRelativeRidge,
@@ -672,6 +677,41 @@ console.log("19. Relative ridge C §6 contract");
   assert(
     huge.trainMSE > tiny.trainMSE,
     "path: large ρ raises training MSE (pays for shrinkage)",
+  );
+}
+
+console.log("20. Backprop finite-difference check + progress parser");
+{
+  const check = runBackpropCheck(BACKPROP_CHECK_DEFAULTS);
+  assert(
+    check.relErrW < 1e-6,
+    `analytic ∂J/∂w matches central FD (rel ${check.relErrW})`,
+  );
+  assert(
+    check.relErrB < 1e-6,
+    `analytic ∂J/∂b matches central FD (rel ${check.relErrB})`,
+  );
+
+  const slugs = LESSONS.map((lesson) => lesson.slug);
+  const empty = parseProgress("nope", slugs, 1);
+  assert(
+    empty.lastLessonSlug === null && empty.completedSlugs.length === 0,
+    "malformed progress → empty",
+  );
+  const parsed = parseProgress(
+    {
+      schemaVersion: 1,
+      lastLessonSlug: "not-a-lesson",
+      completedSlugs: ["overfitting", "ghost-slug", "overfitting"],
+      updatedAt: 1,
+    },
+    slugs,
+    1,
+  );
+  assert(parsed.lastLessonSlug === null, "unknown lastLessonSlug is dropped");
+  assert(
+    parsed.completedSlugs.length === 1 && parsed.completedSlugs[0] === "overfitting",
+    "unknown completion dropped; known slug kept unique",
   );
 }
 

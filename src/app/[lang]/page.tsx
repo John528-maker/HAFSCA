@@ -2,6 +2,7 @@ import { LEARNING_PATHS } from "@/curriculum/paths";
 import { publishedLessons, lessonPath } from "@/curriculum/curriculum";
 import { isCourseLocale, type CourseLocale } from "@/lib/locales";
 import { getMessages } from "@/lib/i18n";
+import ContinueCourse from "@/components/ContinueCourse";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -28,6 +29,7 @@ export default async function LobbyPage({
       </h1>
       <p className="mt-4 text-lg text-muted">{t.hero.subtitle}</p>
       <div className="mt-8 flex flex-wrap gap-3">
+        <ContinueCourse lang={locale} />
         <Link
           href={lessonPath(locale, first.slug)}
           className="inline-flex h-11 items-center rounded-md bg-accent px-5 text-sm font-medium text-white"

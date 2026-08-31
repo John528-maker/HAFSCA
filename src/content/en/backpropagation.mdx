@@ -20,7 +20,7 @@ $$
 
 $\delta_L=\partial a_L/\partial a_0$. A full net has one such product per edge, packed as matrix multiplies. We do **not** claim $\delta_L=(1/4)^L$ for a default sigmoid chain: activations move. The live recurrence is the truth; $\lvert\delta_L\rvert\le(\lvert w\rvert/4)^L$ is a bound.
 
-This MVP does **not** train a multilayer net. The lab is the same activations experiment: $\varphi$, $\varphi'$, vanishing $\delta$, dead ReLU.
+This MVP does **not** train a multilayer net. The first lab is a **one-sample check**: $J=(\sigma(wx+b)-y)^2$, analytic $\partial J/\partial w=2(\hat y-y)\sigma'(z)x$ against a central finite difference. Agreement is the test that backprop is the chain rule, not a different algorithm. The second lab is the same activations experiment: $\varphi$, $\varphi'$, vanishing $\delta$, dead ReLU.
 
 ## Summary
 

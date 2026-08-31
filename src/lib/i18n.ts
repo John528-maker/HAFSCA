@@ -24,6 +24,13 @@ const en = {
     experiment: "Experiment",
     briefing:
       "This lab shows a genuine variance explosion near interpolation, then partial recovery. It does not claim a second descent that beats the first minimum.",
+    conditioningLink:
+      "A finite peak is usually variance, not NaN. The numerical story — Chebyshev staying flat, then p → n — is the",
+    conditioningTitle: "conditioning lesson",
+    continue: "Continue",
+    markDone: "Mark complete",
+    done: "Completed — unmark",
+    completed: "completed",
   },
   gd: {
     title: "Gradient descent",
@@ -135,6 +142,15 @@ const en = {
     curve: "Fit vs true cubic",
     mse: "Train and truth-target test MSE vs log₁₀ ρ",
     coefs: "Chebyshev coefficients vs log₁₀ ρ",
+  },
+  bp: {
+    title: "Chain rule vs finite difference",
+    guide:
+      "One sample, J = (σ(wx+b) − y)². The analytic ∂J/∂w is 2(ŷ−y)σ′(z)x. Central differences should match. This is not training a net.",
+    relW: "rel. err. w",
+    relB: "rel. err. b",
+    match: "Analytic gradient matches the finite-difference check.",
+    mismatch: "The two derivatives disagree. Try a smaller h, or move off a kink.",
   },
   languageToggle: "한국어",
   hero: {
@@ -313,6 +329,13 @@ const ko = {
     experiment: "실험",
     briefing:
       "이 실험은 보간 근처의 실제 분산 폭증과 그 이후의 부분 회복을 보여 줍니다. 두 번째 하강이 첫 최소점보다 좋아진다고 주장하지 않습니다.",
+    conditioningLink:
+      "유한한 봉우리는 대개 분산이지 NaN이 아닙니다. 체비쇼프가 평탄하다가 p → n에서 나빠지는 수치 이야기는",
+    conditioningTitle: "조건수 수업",
+    continue: "이어서 보기",
+    markDone: "완료로 표시",
+    done: "완료됨 — 해제",
+    completed: "완료",
   },
   gd: {
     title: "경사 하강법",
@@ -424,6 +447,15 @@ const ko = {
     curve: "적합 vs 참 삼차식",
     mse: "학습 MSE와 참 함수 테스트 MSE vs log₁₀ ρ",
     coefs: "체비쇼프 계수 vs log₁₀ ρ",
+  },
+  bp: {
+    title: "연쇄 법칙 vs 유한차분",
+    guide:
+      "표본 하나, J = (σ(wx+b) − y)². 해석적 ∂J/∂w는 2(ŷ−y)σ′(z)x입니다. 중앙차분이 이와 같아야 합니다. 망을 학습시키는 것이 아닙니다.",
+    relW: "상대 오차 w",
+    relB: "상대 오차 b",
+    match: "해석적 기울기가 유한차분 검사와 맞습니다.",
+    mismatch: "두 도함수가 다릅니다. h를 더 작게 하거나, 꺾인 점에서 벗어나 보세요.",
   },
   languageToggle: "English",
   hero: {
@@ -601,6 +633,12 @@ export type Messages = {
     next: string;
     experiment: string;
     briefing: string;
+    conditioningLink: string;
+    conditioningTitle: string;
+    continue: string;
+    markDone: string;
+    done: string;
+    completed: string;
   };
   gd: {
     title: string;
@@ -667,6 +705,14 @@ export type Messages = {
     useLeaky: string;
     deadFrac: string;
     allDead: string;
+  };
+  bp: {
+    title: string;
+    guide: string;
+    relW: string;
+    relB: string;
+    match: string;
+    mismatch: string;
   };
   bv: {
     title: string;

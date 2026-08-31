@@ -16,6 +16,10 @@ Primary test MSE is against $f$ (no label noise). Secondary is against noisy hel
 
 Use the lab below. Interpolation is reported as the theoretical degree $n_{\mathrm{train}}-1$, not a magic train-MSE cutoff.
 
+## Conditioning, not NaN
+
+A finite peak near $p=n$ is usually **variance**, not a broken solve. Chebyshev columns keep $\kappa(X)$ essentially flat at moderate degree; the late blow-up is $p\to n$. That numerical story is the **conditioning** lesson. Do not treat a huge but finite test MSE as “the computer failed.”
+
 ## Summary
 
 Treat a huge peak near $p=n$ as **model behavior**, not as the computer breaking — unless the run is marked as a numerical failure (non-finite values).

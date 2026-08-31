@@ -1,14 +1,17 @@
 import LessonExperiment from "@/components/LessonExperiment";
 import LessonNav from "@/components/LessonNav";
+import LessonProgress from "@/components/LessonProgress";
 import {
   generateLessonParams,
   getLesson,
+  lessonPath,
 } from "@/curriculum/curriculum";
 import { isCourseLocale, type CourseLocale } from "@/lib/locales";
 import { getMessages } from "@/lib/i18n";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import type { ComponentType } from "react";
+import Link from "next/link";
 
 export const dynamicParams = false;
 
@@ -52,10 +55,22 @@ export default async function LessonPage({
     <>
       <main className="mx-auto max-w-3xl space-y-8 px-4 py-12 sm:px-6">
         <LessonNav lang={locale} lesson={lesson} />
+        {lesson.published && <LessonProgress slug={lesson.slug} />}
         {lesson.slug === "double-descent" && (
-          <p className="rounded-md border border-threshold/30 bg-card px-4 py-3 text-sm">
-            {t.course.briefing}
-          </p>
+          <div className="space-y-3">
+            <p className="rounded-md border border-threshold/30 bg-card px-4 py-3 text-sm">
+              {t.course.briefing}
+            </p>
+            <p className="rounded-md border border-border bg-card px-4 py-3 text-sm">
+              {t.course.conditioningLink}{" "}
+              <Link
+                className="text-accent underline-offset-2 hover:underline"
+                href={lessonPath(locale, "conditioning")}
+              >
+                {t.course.conditioningTitle}.
+              </Link>
+            </p>
+          </div>
         )}
         {Body ? (
           <article className="lesson-prose">
@@ -71,7 +86,11 @@ export default async function LessonPage({
           className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6"
         >
           <h2 className="mb-3 text-lg font-semibold">{t.course.experiment}</h2>
-          <LessonExperiment experimentId={lesson.experimentId} lang={locale} />
+          <LessonExperiment
+            experimentId={lesson.experimentId}
+            lang={locale}
+            slug={lesson.slug}
+          />
         </section>
       )}
     </>

@@ -21,8 +21,15 @@ export default async function LangLayout({
 
   return (
     <LanguageProvider locale={lang}>
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `document.documentElement.lang=${JSON.stringify(lang === "ko" ? "ko" : "en")};`,
+        }}
+      />
       <SiteHeader lang={lang as CourseLocale} />
-      <div className="flex-1">{children}</div>
+      <div className="flex-1" lang={lang === "ko" ? "ko" : "en"}>
+        {children}
+      </div>
       <footer className="border-t border-border py-6 text-center text-xs text-muted">
         {t.footer}
       </footer>

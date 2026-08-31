@@ -1,6 +1,7 @@
 "use client";
 
 import { useLanguage } from "@/components/LanguageProvider";
+import ContinueCourse from "@/components/ContinueCourse";
 import type { CourseLocale } from "@/lib/locales";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -54,6 +55,7 @@ export default function SiteHeader({ lang }: { lang: CourseLocale }) {
               </Link>
             ))}
           </nav>
+          <ContinueCourse lang={lang} compact />
           <button
             type="button"
             onClick={toggleLocale}
