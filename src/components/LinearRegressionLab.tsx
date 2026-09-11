@@ -165,8 +165,8 @@ export default function LinearRegressionLab() {
         : l.needPoints;
 
   return (
-    <div className="space-y-4 rounded-lg border border-border bg-card p-5">
-      <h3 className="text-sm font-semibold uppercase tracking-wider text-muted">
+    <div className="card-3d space-y-4 p-5">
+      <h3 className="text-sm font-extrabold text-muted">
         {l.title}
       </h3>
       <p className="text-sm text-muted">{l.guide}</p>
@@ -230,14 +230,14 @@ export default function LinearRegressionLab() {
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
-          className="rounded-md border border-border px-3 py-1.5 text-sm"
+          className="press press-secondary press-sm"
           onClick={() => regenerate()}
         >
           {l.reset}
         </button>
         <button
           type="button"
-          className="rounded-md border border-border px-3 py-1.5 text-sm"
+          className="press press-secondary press-sm"
           onClick={addOutlier}
           disabled={!canAddOutlier(points)}
         >
@@ -245,7 +245,7 @@ export default function LinearRegressionLab() {
         </button>
         <button
           type="button"
-          className="rounded-md border border-border px-3 py-1.5 text-sm"
+          className="press press-secondary press-sm"
           onClick={removeSelected}
           disabled={selectedId === null || points.length <= OLS_N_MIN}
         >
@@ -385,7 +385,7 @@ export default function LinearRegressionLab() {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-[11px] uppercase tracking-wide text-muted">{label}</dt>
+      <dt className="text-[11px] font-extrabold text-muted">{label}</dt>
       <dd className="font-medium text-foreground">{value}</dd>
     </div>
   );

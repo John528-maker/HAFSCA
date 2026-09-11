@@ -6,6 +6,8 @@ export interface ProgressV1 {
   curriculumVersion: number;
   lastLessonSlug: string | null;
   completedSlugs: string[];
+  /** Active learning path id (`start` | `lab` | …). */
+  activePathId: string | null;
   updatedAt: number;
 }
 
@@ -15,6 +17,7 @@ export function emptyProgress(curriculumVersion: number): ProgressV1 {
     curriculumVersion,
     lastLessonSlug: null,
     completedSlugs: [],
+    activePathId: "start",
     updatedAt: 0,
   };
 }
@@ -28,12 +31,14 @@ export function parseProgress(
   raw: unknown,
   knownSlugs: readonly string[],
   curriculumVersion: number,
+  knownPathIds: readonly string[] = ["start", "lab"],
 ): ProgressV1 {
   const empty = emptyProgress(curriculumVersion);
   if (raw === null || typeof raw !== "object") return empty;
   const record = raw as Record<string, unknown>;
   if (record.schemaVersion !== PROGRESS_SCHEMA_VERSION) return empty;
   const known = new Set(knownSlugs);
+  const paths = new Set(knownPathIds);
   const last =
     isSlug(record.lastLessonSlug) && known.has(record.lastLessonSlug)
       ? record.lastLessonSlug
@@ -44,6 +49,10 @@ export function parseProgress(
       )
     : [];
   const unique = [...new Set(completed)];
+  const activePathId =
+    isSlug(record.activePathId) && paths.has(record.activePathId)
+      ? record.activePathId
+      : "start";
   const updatedAt =
     typeof record.updatedAt === "number" && Number.isFinite(record.updatedAt)
       ? record.updatedAt
@@ -53,6 +62,7 @@ export function parseProgress(
     curriculumVersion,
     lastLessonSlug: last,
     completedSlugs: unique,
+    activePathId,
     updatedAt,
   };
 }
@@ -127,6 +137,45 @@ export function touchLastLesson(
   const next: ProgressV1 = {
     ...current,
     lastLessonSlug: slug,
+    updatedAt: Date.now(),
+  };
+  saveProgress(next);
+  return next;
+}
+
+export function setActivePath(
+  pathId: string,
+  knownSlugs: readonly string[],
+  curriculumVersion: number,
+): ProgressV1 {
+  const current = loadProgress(knownSlugs, curriculumVersion);
+  if (current.activePathId === pathId) return current;
+  const next: ProgressV1 = {
+    ...current,
+    activePathId: pathId,
+    updatedAt: Date.now(),
+  };
+  saveProgress(next);
+  return next;
+}
+
+export function markLessonComplete(
+  slug: string,
+  knownSlugs: readonly string[],
+  curriculumVersion: number,
+): ProgressV1 {
+  const current = loadProgress(knownSlugs, curriculumVersion);
+  if (!knownSlugs.includes(slug)) return current;
+  if (current.completedSlugs.includes(slug) && current.lastLessonSlug === slug) {
+    return current;
+  }
+  const completedSlugs = current.completedSlugs.includes(slug)
+    ? current.completedSlugs
+    : [...current.completedSlugs, slug];
+  const next: ProgressV1 = {
+    ...current,
+    lastLessonSlug: slug,
+    completedSlugs,
     updatedAt: Date.now(),
   };
   saveProgress(next);

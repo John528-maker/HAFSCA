@@ -10,6 +10,7 @@ import {
   touchLastLesson,
 } from "@/lib/progress";
 import { useLanguage } from "@/components/LanguageProvider";
+import Pressable from "@/components/Pressable";
 import { useEffect, useSyncExternalStore } from "react";
 
 const knownSlugs = LESSONS.map((lesson) => lesson.slug);
@@ -38,14 +39,14 @@ export default function LessonProgress({ slug }: { slug: string }) {
   }, [slug]);
 
   return (
-    <button
-      type="button"
-      className="rounded-md border border-border px-3 py-1.5 text-sm"
+    <Pressable
+      variant={done ? "secondary" : "primary"}
+      aria-pressed={done}
       onClick={() => {
         toggleLessonComplete(slug, knownSlugs, CURRICULUM_VERSION);
       }}
     >
       {done ? t.course.done : t.course.markDone}
-    </button>
+    </Pressable>
   );
 }

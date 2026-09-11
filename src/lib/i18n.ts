@@ -6,6 +6,7 @@ export const LOCALE_STORAGE_KEY = "ai-research-lab.locale";
 
 const en = {
   siteName: "AI Research Lab",
+  skipToContent: "Skip to content",
   nav: {
     home: "Home",
     learn: "Course",
@@ -17,8 +18,22 @@ const en = {
     start: "Start the course",
     lab: "Open the interpolation lab",
     map: "Course map",
+    progressOf: (done: number, total: number) => `${done} / ${total}`,
+    lessonsCount: (done: number, total: number) =>
+      `${done} of ${total} lessons`,
+    upNext: "Up next",
+    review: "Review",
+    startLesson: "Start",
     coming: "This lesson is not published yet.",
     prereq: "Recommended first:",
+    prereqMissing:
+      "This lesson assumes work you have not marked complete yet. Open a prerequisite first, or continue anyway.",
+    continueAnyway: "Continue anyway",
+    skipExperiment: "Skip to experiment",
+    hasExperiment: "Has experiment",
+    actFit: "Fit",
+    actGeneralize: "Generalize",
+    actScale: "Scale",
     prev: "Previous",
     next: "Next",
     experiment: "Experiment",
@@ -31,6 +46,22 @@ const en = {
     markDone: "Mark complete",
     done: "Completed — unmark",
     completed: "completed",
+    labsIndex: "Labs",
+  },
+  quiz: {
+    check: "Check",
+    startReview: "Start review",
+    questionOf: (n: number, total: number) => `Question ${n} of ${total}`,
+    correct: "Nice!",
+    wrong: "Not quite",
+    passed: "Lesson complete",
+    keepGoing: "Almost — try the review again",
+    score: (n: number, total: number) => `${n} / ${total} correct`,
+    passedHint: "Every review question is right. Open the lab, or go on.",
+    retryHint: "Wrong answers are OK. Read the note, then try the three questions again.",
+    retry: "Retry review",
+    openLab: "Open the lab",
+    closeLesson: "Close",
   },
   gd: {
     title: "Gradient descent",
@@ -78,6 +109,14 @@ const en = {
     run: "Fit degrees 0–12",
     seed: "Seed",
     noise: "Noise σ",
+    degree: "Degree d",
+    train: "Training",
+    test: "Test",
+    truth: "True cubic",
+    fit: "Fitted curve",
+    fitTitle: (d: number) => `Fit at degree ${d}`,
+    fitHint:
+      "Drag degree past 3–5: the black curve peels off the dashed cubic and chases blue training points.",
     plateau:
       "On a typical sample the test-error minimum is a plateau across degrees 3–5, not a single true degree.",
     noSweet:
@@ -85,7 +124,47 @@ const en = {
     uCurve:
       "Training error falls while test error eventually rises: a U-shaped test curve, not a proof that degree 3 is uniquely best.",
     best: (degree: number, cap: number) =>
-      `Best degree on the truth-target test MSE: ${degree}. Cap ${cap}.`,
+      `Lowest truth-target test MSE on this sample: degree ${degree} (not a selection rule). Cap ${cap}.`,
+  },
+  gen: {
+    title: "Train / validation / test",
+    guide:
+      "Pick the degree on the purple validation curve. The red test curve is the exam you take once — peeking at it to choose complexity invents an optimistic score.",
+    seed: "Seed",
+    noise: "Noise σ",
+    nTrain: "Train n",
+    nValid: "Valid n",
+    nTest: "Test n",
+    honest: "Honest pick (min valid)",
+    peek: "Peeking pick (min test)",
+    aha: "The test-minimizing degree looks better on the exam because you used the exam to study. Prefer the validation pick.",
+    caption:
+      "60 points → 60% train / 20% valid / 20% test. Primary test MSE is still versus the true cubic.",
+    train: "Train MSE",
+    valid: "Valid MSE",
+    test: "Test MSE vs f",
+    validPick: "valid pick",
+    testPick: "test peek",
+  },
+  cond: {
+    title: "Conditioning (measured κ)",
+    guide:
+      "These numbers are measured κ(X) on this repo’s arcsine nodes — how parallel the feature columns are. They are not the regularized Gram upper bound used as a solve guard.",
+    twoKappas:
+      "Two different κs: measured κ(X) teaches the lesson; gramSize/RIDGE+1 only decides when float64 has too few trustworthy digits.",
+    tableCaption: "Measured κ(X) vs degree (arcsine nodes)",
+    degree: "Degree",
+    monomial: "Monomial",
+    chebyshev: "Chebyshev",
+    vsUniform: "Chebyshev+uniform ≈",
+    measured: "Measured κ(X)",
+    measuredDef:
+      "Singular-value ratio of the design matrix. Flat for Chebyshev+arcsine until p approaches n.",
+    guard: "Solve guard (not a student κ)",
+    guardDef: (example: string, ceiling: string) =>
+      `≤ m/RIDGE+1 (e.g. ≈ ${example} at m=40). Ridge floors the Gram near ${ceiling} for d ≳ 78.`,
+    monoChart: "Monomial κ (log scale) — exponential",
+    chebChart: "Chebyshev κ — flat, then p→n",
   },
   act: {
     title: "Activations",
@@ -129,7 +208,9 @@ const en = {
     guide:
       "The lever is relative ρ, not a smaller degree. Drag it and the wiggly degree-10 fit relaxes. Ridge shrinks toward 0 in Chebyshev coordinates, not toward the true cubic.",
     relative:
-      "Applied λ = ρ × mean(diag G). The double-descent engine keeps ρ = 10⁻⁸. This slider uses the same units.",
+      "Student control is ρ (relative). Applied λ = ρ · mean(diag G) — not textbook absolute λ, and not nλ on averaged loss. The flagship engine keeps ρ = 10⁻⁸.",
+    rhoLabel: "ρ (relative)",
+    lambdaLabel: "applied λ",
     degree: "Degree d",
     noise: "Noise σ",
     seed: "Seed",
@@ -196,7 +277,7 @@ const en = {
     datasetSize: "Dataset Size",
     noiseLevel: "Noise Level",
     randomSeed: "Random Seed",
-    bestTest: "Best Test Performance",
+    bestTest: "Lowest truth-target test MSE (not a selection rule)",
     bestDegree: (d: number) => `Degree ${d}`,
     interpolationThreshold: "Interpolation Threshold",
     degree: (d: number) => `Degree ${d}`,
@@ -214,11 +295,13 @@ const en = {
   },
   errorChart: {
     title: "Model Complexity vs Error",
-    hint: "Click a point to inspect that model.",
+    hint: "Click a point or use the degree control to inspect that model.",
     selected: (d: number) => `Selected: degree ${d}.`,
     empty: "Model complexity vs error will appear here after you run an experiment.",
     log: "Log",
     linear: "Linear",
+    scaleGroup: "Y-axis scale",
+    degreeSelect: "Degree",
     xAxis: "Model Complexity (degree)",
     yAxisLog: "MSE (log)",
     yAxis: "MSE",
@@ -311,6 +394,7 @@ const en = {
 
 const ko = {
   siteName: "AI Research Lab",
+  skipToContent: "본문으로 건너뛰기",
   nav: {
     home: "홈",
     learn: "수업",
@@ -322,8 +406,22 @@ const ko = {
     start: "수업 시작하기",
     lab: "보간 실험 열기",
     map: "수업 지도",
+    progressOf: (done: number, total: number) => `${done} / ${total}`,
+    lessonsCount: (done: number, total: number) =>
+      `${total}개 중 ${done}개 완료`,
+    upNext: "다음 수업",
+    review: "복습",
+    startLesson: "시작",
     coming: "이 수업은 아직 공개되지 않았습니다.",
     prereq: "먼저 보면 좋은 수업:",
+    prereqMissing:
+      "이 수업은 아직 완료로 표시하지 않은 선수 수업을 가정합니다. 선수를 먼저 열거나, 그냥 계속하세요.",
+    continueAnyway: "그래도 계속",
+    skipExperiment: "실험으로 건너뛰기",
+    hasExperiment: "실험 있음",
+    actFit: "맞춤",
+    actGeneralize: "일반화",
+    actScale: "확장",
     prev: "이전",
     next: "다음",
     experiment: "실험",
@@ -336,6 +434,22 @@ const ko = {
     markDone: "완료로 표시",
     done: "완료됨 — 해제",
     completed: "완료",
+    labsIndex: "실험 목록",
+  },
+  quiz: {
+    check: "확인",
+    startReview: "복습 시작",
+    questionOf: (n: number, total: number) => `문제 ${n} / ${total}`,
+    correct: "맞아요!",
+    wrong: "아직 아니에요",
+    passed: "수업 완료",
+    keepGoing: "거의 다 왔어요. 복습을 다시 해보세요",
+    score: (n: number, total: number) => `${n} / ${total} 맞힘`,
+    passedHint: "복습 문제를 모두 맞혔습니다. 실험을 열거나 다음으로 가세요.",
+    retryHint: "틀려도 됩니다. 설명을 읽고, 세 문제를 다시 풀어 보세요.",
+    retry: "복습 다시",
+    openLab: "실험 열기",
+    closeLesson: "닫기",
   },
   gd: {
     title: "경사 하강법",
@@ -383,6 +497,14 @@ const ko = {
     run: "차수 0–12 적합",
     seed: "시드",
     noise: "노이즈 σ",
+    degree: "차수 d",
+    train: "학습",
+    test: "테스트",
+    truth: "참 삼차식",
+    fit: "적합 곡선",
+    fitTitle: (d: number) => `차수 ${d} 적합`,
+    fitHint:
+      "차수를 3–5 너머로 끌어 보세요. 검은 곡선이 점선 삼차식에서 벗어나 파란 학습 점을 쫓습니다.",
     plateau:
       "전형적인 표본에서 테스트 오차 최솟값은 차수 3–5의 평탄 구간이며, 진짜 차수 하나만이 최적이라고 말할 수 없습니다.",
     noSweet:
@@ -390,7 +512,47 @@ const ko = {
     uCurve:
       "학습 오차는 내려가고 테스트 오차는 결국 올라갑니다. U자 곡선이지, 차수 3이 유일하게 최적이라는 증명은 아닙니다.",
     best: (degree: number, cap: number) =>
-      `참 함수 기준 테스트 MSE가 가장 낮은 차수: ${degree}. 상한 ${cap}.`,
+      `이 표본에서 참 함수 테스트 MSE가 가장 낮은 차수: ${degree} (선택 규칙 아님). 상한 ${cap}.`,
+  },
+  gen: {
+    title: "학습 / 검증 / 테스트",
+    guide:
+      "보라색 검증 곡선에서 차수를 고르세요. 빨간 테스트 곡선은 한 번만 보는 시험입니다. 복잡도를 고르려고 시험을 엿보면 낙관적인 점수가 나옵니다.",
+    seed: "시드",
+    noise: "노이즈 σ",
+    nTrain: "학습 n",
+    nValid: "검증 n",
+    nTest: "테스트 n",
+    honest: "정직한 선택 (검증 최소)",
+    peek: "엿보기 선택 (테스트 최소)",
+    aha: "테스트 최소화 차수가 시험 점수가 더 좋아 보이는 이유는 시험지로 공부했기 때문입니다. 검증 선택을 쓰세요.",
+    caption:
+      "60점 → 학습 60% / 검증 20% / 테스트 20%. 주 테스트 MSE는 여전히 참 삼차식 기준입니다.",
+    train: "학습 MSE",
+    valid: "검증 MSE",
+    test: "테스트 MSE vs f",
+    validPick: "검증 선택",
+    testPick: "테스트 엿보기",
+  },
+  cond: {
+    title: "조건수 (측정 κ)",
+    guide:
+      "이 숫자는 이 저장소의 arcsine 노드에서 잰 κ(X)입니다 — 특성 기둥이 얼마나 비슷한지. 솔브 가드로 쓰는 정규화 Gram 상한이 아닙니다.",
+    twoKappas:
+      "κ가 두 개입니다. 측정 κ(X)가 수업이고, gramSize/RIDGE+1 은 float64 자릿수가 부족한지만 가립니다.",
+    tableCaption: "측정 κ(X) vs 차수 (arcsine 노드)",
+    degree: "차수",
+    monomial: "단항",
+    chebyshev: "체비쇼프",
+    vsUniform: "체비쇼프+균등 ≈",
+    measured: "측정 κ(X)",
+    measuredDef:
+      "설계 행렬의 특이값 비. 체비쇼프+arcsine는 p가 n에 가까워질 때까지 거의 평탄합니다.",
+    guard: "솔브 가드 (학생용 κ 아님)",
+    guardDef: (example: string, ceiling: string) =>
+      `≤ m/RIDGE+1 (예: m=40에서 ≈ ${example}). d ≳ 78에서 ridge가 Gram을 약 ${ceiling} 으로 바닥냅니다.`,
+    monoChart: "단항 κ (로그) — 지수 성장",
+    chebChart: "체비쇼프 κ — 평탄하다 p→n",
   },
   act: {
     title: "활성화 함수",
@@ -434,7 +596,9 @@ const ko = {
     guide:
       "손잡이는 상대 ρ이지, 더 작은 차수가 아닙니다. 움직이면 울퉁불퉁한 차수 10 적합이 풀립니다. Ridge는 참 삼차식이 아니라 체비쇼프 원점으로 줄어듭니다.",
     relative:
-      "적용되는 λ = ρ × mean(diag G). 이중 하강 엔진은 ρ = 10⁻⁸을 유지합니다. 이 슬라이더는 같은 단위입니다.",
+      "학생 손잡이는 ρ(상대)입니다. 적용 λ = ρ · mean(diag G) — 교과서 절대 λ도, 평균 손실의 nλ도 아닙니다. 플래그십 엔진은 ρ = 10⁻⁸을 유지합니다.",
+    rhoLabel: "ρ (상대)",
+    lambdaLabel: "적용 λ",
     degree: "차수 d",
     noise: "노이즈 σ",
     seed: "시드",
@@ -501,7 +665,7 @@ const ko = {
     datasetSize: "데이터셋 크기",
     noiseLevel: "노이즈 수준",
     randomSeed: "랜덤 시드",
-    bestTest: "최고 테스트 성능",
+    bestTest: "최저 참함수 테스트 MSE (선택 규칙 아님)",
     bestDegree: (d: number) => `차수 ${d}`,
     interpolationThreshold: "보간 임계값",
     degree: (d: number) => `차수 ${d}`,
@@ -519,11 +683,13 @@ const ko = {
   },
   errorChart: {
     title: "모델 복잡도 vs 오차",
-    hint: "점을 클릭하면 해당 모델을 확인할 수 있습니다.",
+    hint: "점을 클릭하거나 차수 컨트롤로 해당 모델을 확인하세요.",
     selected: (d: number) => `선택됨: 차수 ${d}.`,
     empty: "실험 실행 후 모델 복잡도 대 오차 그래프가 표시됩니다.",
     log: "로그",
     linear: "선형",
+    scaleGroup: "Y축 스케일",
+    degreeSelect: "차수",
     xAxis: "모델 복잡도 (차수)",
     yAxisLog: "MSE (로그)",
     yAxis: "MSE",
@@ -616,6 +782,7 @@ const ko = {
 
 export type Messages = {
   siteName: string;
+  skipToContent: string;
   nav: {
     home: string;
     learn: string;
@@ -627,8 +794,20 @@ export type Messages = {
     start: string;
     lab: string;
     map: string;
+    progressOf: (done: number, total: number) => string;
+    lessonsCount: (done: number, total: number) => string;
+    upNext: string;
+    review: string;
+    startLesson: string;
     coming: string;
     prereq: string;
+    prereqMissing: string;
+    continueAnyway: string;
+    skipExperiment: string;
+    hasExperiment: string;
+    actFit: string;
+    actGeneralize: string;
+    actScale: string;
     prev: string;
     next: string;
     experiment: string;
@@ -639,6 +818,22 @@ export type Messages = {
     markDone: string;
     done: string;
     completed: string;
+    labsIndex: string;
+  };
+  quiz: {
+    check: string;
+    startReview: string;
+    questionOf: (n: number, total: number) => string;
+    correct: string;
+    wrong: string;
+    passed: string;
+    keepGoing: string;
+    score: (n: number, total: number) => string;
+    passedHint: string;
+    retryHint: string;
+    retry: string;
+    openLab: string;
+    closeLesson: string;
   };
   gd: {
     title: string;
@@ -685,10 +880,51 @@ export type Messages = {
     run: string;
     seed: string;
     noise: string;
+    degree: string;
+    train: string;
+    test: string;
+    truth: string;
+    fit: string;
+    fitTitle: (d: number) => string;
+    fitHint: string;
     plateau: string;
     noSweet: string;
     uCurve: string;
     best: (degree: number, cap: number) => string;
+  };
+  gen: {
+    title: string;
+    guide: string;
+    seed: string;
+    noise: string;
+    nTrain: string;
+    nValid: string;
+    nTest: string;
+    honest: string;
+    peek: string;
+    aha: string;
+    caption: string;
+    train: string;
+    valid: string;
+    test: string;
+    validPick: string;
+    testPick: string;
+  };
+  cond: {
+    title: string;
+    guide: string;
+    twoKappas: string;
+    tableCaption: string;
+    degree: string;
+    monomial: string;
+    chebyshev: string;
+    vsUniform: string;
+    measured: string;
+    measuredDef: string;
+    guard: string;
+    guardDef: (example: string, ceiling: string) => string;
+    monoChart: string;
+    chebChart: string;
   };
   act: {
     title: string;
@@ -733,6 +969,8 @@ export type Messages = {
     title: string;
     guide: string;
     relative: string;
+    rhoLabel: string;
+    lambdaLabel: string;
     degree: string;
     noise: string;
     seed: string;
@@ -805,6 +1043,8 @@ export type Messages = {
     empty: string;
     log: string;
     linear: string;
+    scaleGroup: string;
+    degreeSelect: string;
     xAxis: string;
     yAxisLog: string;
     yAxis: string;

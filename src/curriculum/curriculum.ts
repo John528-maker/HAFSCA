@@ -66,6 +66,7 @@ export const LESSONS: LessonMeta[] = [
       ko: "기울기를 만나기 전에 복잡도를 손잡이로 만집니다.",
     },
     prerequisites: ["linear-regression"],
+    experimentId: "overfitting",
     published: true,
   },
   {
@@ -78,6 +79,7 @@ export const LESSONS: LessonMeta[] = [
       ko: "한 매개변수에 대한 손실의 기울기입니다.",
     },
     prerequisites: ["loss-function"],
+    experimentId: "finite-diff",
     published: true,
   },
   {
@@ -102,7 +104,6 @@ export const LESSONS: LessonMeta[] = [
       ko: "모든 편도함수를 모은 벡터, 곧 오르막 방향입니다.",
     },
     prerequisites: ["partial-derivative"],
-    experimentId: "activations",
     published: true,
   },
   {
@@ -152,6 +153,7 @@ export const LESSONS: LessonMeta[] = [
       ko: "학습 오차가 질문이 아닙니다. 보지 못한 오차가 질문입니다.",
     },
     prerequisites: ["loss-function"],
+    experimentId: "generalization",
     published: true,
   },
   {
@@ -163,7 +165,7 @@ export const LESSONS: LessonMeta[] = [
       en: "Training error can fall while test error rises.",
       ko: "학습 오차는 내려가도 테스트 오차는 올라갈 수 있습니다.",
     },
-    prerequisites: ["linear-regression"],
+    prerequisites: ["polynomial-regression", "generalization"],
     experimentId: "overfitting",
     published: true,
   },
@@ -190,6 +192,7 @@ export const LESSONS: LessonMeta[] = [
       ko: "매개변수 수가 학습 점 수와 같아지는 지점, p = n입니다.",
     },
     prerequisites: ["overfitting"],
+    experimentId: "double-descent",
     published: true,
   },
   {
@@ -201,7 +204,8 @@ export const LESSONS: LessonMeta[] = [
       en: "A correct formula can still explode when p approaches n.",
       ko: "공식이 맞아도 p가 n에 가까워지면 숫자가 터질 수 있습니다.",
     },
-    prerequisites: ["interpolation-threshold"],
+    prerequisites: ["interpolation-threshold", "normal-equations"],
+    experimentId: "conditioning",
     published: true,
   },
   {
@@ -213,7 +217,7 @@ export const LESSONS: LessonMeta[] = [
       en: "A real variance explosion near interpolation, then partial recovery.",
       ko: "보간 근처의 실제 분산 폭증, 그리고 부분 회복입니다.",
     },
-    prerequisites: ["overfitting"],
+    prerequisites: ["interpolation-threshold", "conditioning"],
     experimentId: "double-descent",
     published: true,
   },
@@ -227,6 +231,7 @@ export const LESSONS: LessonMeta[] = [
       ko: "합성된 함수. 비선형이 없으면 깊어도 아핀 하나와 같습니다.",
     },
     prerequisites: ["gradient-descent"],
+    experimentId: "activations",
     published: true,
   },
   {

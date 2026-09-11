@@ -2,6 +2,7 @@
 
 import {
   getMessages,
+  LOCALE_STORAGE_KEY,
   type Locale,
   type Messages,
 } from "@/lib/i18n";
@@ -24,6 +25,15 @@ interface LanguageContextValue {
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
+function persistLocale(locale: Locale) {
+  try {
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+  } catch {
+    /* ignore quota */
+  }
+  document.cookie = `${LOCALE_STORAGE_KEY}=${locale};path=/;max-age=31536000;SameSite=Lax`;
+}
+
 export function LanguageProvider({
   locale,
   children,
@@ -36,10 +46,12 @@ export function LanguageProvider({
 
   useEffect(() => {
     document.documentElement.lang = locale === "ko" ? "ko" : "en";
+    persistLocale(locale);
   }, [locale]);
 
   const setLocale = useCallback(
     (next: Locale) => {
+      persistLocale(next);
       const replaced = pathname.replace(/^\/(en|ko)(?=\/|$)/, `/${next}`);
       router.push(replaced === pathname ? `/${next}` : replaced);
     },

@@ -26,6 +26,8 @@ Normal equations **square** the condition number: $\kappa_2(X^{\top}X)=\kappa_2(
 
 The relative ridge floors $\kappa$ at about $4.6\times10^{8}$ once $d\gtrsim 78$. Printed $\kappa$ in that regime is a ceiling, not extra digits of physics.
 
+**Do not confuse two κs.** The lesson’s measured $\kappa(X)=\sigma_{\max}/\sigma_{\min}$ says how parallel the columns are. The engine’s `regularizedGramConditionUpperBound` $= p/\texttt{RIDGE}+1$ (about $10^{8}$ when $\texttt{RIDGE}=10^{-8}$) is only a **solve-trust** guard — how many digits the regularized Gram solve can claim — not the same object as $\kappa(X)$.
+
 The overfitting lab caps $d\le 12$ at $n_{\mathrm{train}}=40$, where $\kappa(X)\lesssim 2$. That cap is pedagogical and numerical.
 
 Hand check: $A=\begin{pmatrix}1&1\\1&1.001\end{pmatrix}$ has $\kappa_\infty(A)=4004.001$. A relative $5\times10^{-4}$ bump in $b$ can order-one-change the solution.

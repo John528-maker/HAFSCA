@@ -22,8 +22,8 @@ export default function BackpropCheck() {
   const agrees = result.relErrW < 1e-4 && result.relErrB < 1e-4;
 
   return (
-    <div className="space-y-4 rounded-lg border border-border bg-card p-5">
-      <h3 className="text-sm font-semibold uppercase tracking-wider text-muted">
+    <div className="card-3d space-y-4 p-5">
+      <h3 className="text-sm font-extrabold text-muted">
         {b.title}
       </h3>
       <p className="text-sm text-muted">{b.guide}</p>
@@ -88,7 +88,7 @@ function NumSlider(props: {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-[11px] uppercase tracking-wide text-muted">{label}</dt>
+      <dt className="text-[11px] font-extrabold text-muted">{label}</dt>
       <dd className="font-medium text-foreground">{value}</dd>
     </div>
   );

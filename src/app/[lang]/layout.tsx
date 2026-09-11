@@ -1,5 +1,5 @@
 import { LanguageProvider } from "@/components/LanguageProvider";
-import SiteHeader from "@/components/SiteHeader";
+import SiteHeader, { SiteDock } from "@/components/SiteHeader";
 import { LOCALES, isCourseLocale, type CourseLocale } from "@/lib/locales";
 import { getMessages } from "@/lib/i18n";
 import { notFound } from "next/navigation";
@@ -18,21 +18,26 @@ export default async function LangLayout({
   const { lang } = await params;
   if (!isCourseLocale(lang)) notFound();
   const t = getMessages(lang);
+  const htmlLang = lang === "ko" ? "ko" : "en";
 
   return (
     <LanguageProvider locale={lang}>
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `document.documentElement.lang=${JSON.stringify(lang === "ko" ? "ko" : "en")};`,
-        }}
-      />
+      <a href="#main" className="skip-link">
+        {t.skipToContent}
+      </a>
       <SiteHeader lang={lang as CourseLocale} />
-      <div className="flex-1" lang={lang === "ko" ? "ko" : "en"}>
+      <div
+        className="flex-1 pb-24 md:pb-0"
+        id="main"
+        tabIndex={-1}
+        lang={htmlLang}
+      >
         {children}
       </div>
-      <footer className="border-t border-border py-6 text-center text-xs text-muted">
+      <footer className="hidden border-t-2 border-border py-6 text-center text-xs text-muted md:block">
         {t.footer}
       </footer>
+      <SiteDock lang={lang as CourseLocale} />
     </LanguageProvider>
   );
 }

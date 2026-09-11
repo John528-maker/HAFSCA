@@ -65,8 +65,8 @@ export default function ActivationsLab() {
   const allDead = !deadLeaky && shownDead === 1;
 
   return (
-    <div className="space-y-5 rounded-lg border border-border bg-card p-5">
-      <h3 className="text-sm font-semibold uppercase tracking-wider text-muted">
+    <div className="card-3d space-y-5 p-5">
+      <h3 className="text-sm font-extrabold text-muted">
         {a.title}
       </h3>
       <p className="text-sm text-muted">{a.guide}</p>

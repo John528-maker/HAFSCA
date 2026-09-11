@@ -45,6 +45,20 @@ export function evenGrid(min: number, max: number, count: number): number[] {
   return out;
 }
 
+/**
+ * Deterministic arcsine (Chebyshev) nodes on [-1, 1]: x = cos(π u).
+ * Matches sampleInput / Chebyshev orthogonality measure — not uniform Lebesgue.
+ */
+export function arcsineGrid(count: number): number[] {
+  if (count < 2) return [0];
+  const out: number[] = [];
+  for (let i = 0; i < count; i++) {
+    const u = i / (count - 1);
+    out.push(Math.cos(Math.PI * u));
+  }
+  return out;
+}
+
 export interface BvDegreeSlice {
   degree: number;
   /** Mean curve ḡ(x) on the grid. */
@@ -86,7 +100,7 @@ export function sampleVarianceM1(values: number[]): number {
 
 export function runBiasVariance(config: BvConfig, gridCount = 101): BvRun {
   const { M, n, sigma, seed } = validateBvConfig(config);
-  const grid = evenGrid(-1, 1, gridCount);
+  const grid = arcsineGrid(gridCount);
   const truth = grid.map(cubicTruth);
   const datasets: Array<{ x: number[]; y: number[] }> = [];
   for (let m = 0; m < M; m++) {

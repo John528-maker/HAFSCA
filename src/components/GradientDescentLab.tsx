@@ -138,8 +138,8 @@ export default function GradientDescentLab() {
         : g.diverging;
 
   return (
-    <div className="space-y-4 rounded-lg border border-border bg-card p-5">
-      <h3 className="text-sm font-semibold uppercase tracking-wider text-muted">
+    <div className="card-3d space-y-4 p-5">
+      <h3 className="text-sm font-extrabold text-muted">
         {g.title}
       </h3>
       <p className="text-sm text-muted">{g.aha}</p>
@@ -191,12 +191,12 @@ export default function GradientDescentLab() {
       </label>
 
       <div className="flex flex-wrap gap-2">
-        <button type="button" className="rounded-md bg-accent px-3 py-1.5 text-sm text-white" onClick={() => setPlay((current) => ({ ...current, playing: !current.playing }))}>
+        <button type="button" className="press press-primary press-sm" onClick={() => setPlay((current) => ({ ...current, playing: !current.playing }))}>
           {playing ? g.pause : g.play}
         </button>
         <button
           type="button"
-          className="rounded-md border border-border px-3 py-1.5 text-sm"
+          className="press press-secondary press-sm"
           onClick={() =>
             setPlay((current) => ({
               ...current,
@@ -209,7 +209,7 @@ export default function GradientDescentLab() {
         </button>
         <button
           type="button"
-          className="rounded-md border border-border px-3 py-1.5 text-sm"
+          className="press press-secondary press-sm"
           onClick={() => setPlay((current) => ({ ...current, playing: false, cursor: 0 }))}
         >
           {g.reset}
@@ -261,7 +261,7 @@ export default function GradientDescentLab() {
 
       <div className="max-w-md space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted">
+          <h4 className="text-xs font-extrabold text-muted">
             {g.lossVsT}
           </h4>
           <div className="flex rounded-md border border-border text-xs">
@@ -338,7 +338,7 @@ function Slider(props: {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-[11px] uppercase tracking-wide text-muted">{label}</dt>
+      <dt className="text-[11px] font-extrabold text-muted">{label}</dt>
       <dd className="font-medium text-foreground">{value}</dd>
     </div>
   );

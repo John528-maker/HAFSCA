@@ -1,10 +1,9 @@
 import { getPath } from "@/curriculum/paths";
-import { getLesson, lessonPath } from "@/curriculum/curriculum";
 import { isCourseLocale, type CourseLocale } from "@/lib/locales";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LOCALES } from "@/lib/locales";
 import { LEARNING_PATHS } from "@/curriculum/paths";
+import PathActivator from "@/components/PathActivator";
 
 export function generateStaticParams() {
   return LOCALES.flatMap((lang) =>
@@ -25,21 +24,9 @@ export default async function PathPage({
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-      <h1 className="text-3xl font-semibold">{path.title[locale]}</h1>
+      <h1 className="text-pretty text-3xl font-extrabold">{path.title[locale]}</h1>
       <p className="mt-2 text-muted">{path.description[locale]}</p>
-      <ol className="mt-8 list-decimal space-y-3 pl-5">
-        {path.slugs.map((slug) => {
-          const lesson = getLesson(slug);
-          if (!lesson) return null;
-          return (
-            <li key={slug}>
-              <Link href={lessonPath(locale, slug)} className="text-accent">
-                {lesson.title[locale]}
-              </Link>
-            </li>
-          );
-        })}
-      </ol>
+      <PathActivator lang={locale} pathId={path.id} slugs={path.slugs} />
     </main>
   );
 }

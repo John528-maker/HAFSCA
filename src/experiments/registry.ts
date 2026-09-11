@@ -6,6 +6,9 @@ export const EXPERIMENT_IDS = [
   "bias-variance",
   "ridge",
   "double-descent",
+  "generalization",
+  "conditioning",
+  "finite-diff",
 ] as const;
 
 export type ExperimentId = (typeof EXPERIMENT_IDS)[number];

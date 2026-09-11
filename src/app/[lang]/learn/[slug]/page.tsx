@@ -1,6 +1,5 @@
 import LessonExperiment from "@/components/LessonExperiment";
 import LessonNav from "@/components/LessonNav";
-import LessonProgress from "@/components/LessonProgress";
 import {
   generateLessonParams,
   getLesson,
@@ -53,18 +52,17 @@ export default async function LessonPage({
 
   return (
     <>
-      <main className="mx-auto max-w-3xl space-y-8 px-4 py-12 sm:px-6">
+      <main className="mx-auto max-w-2xl space-y-6 px-4 py-6 sm:px-6">
         <LessonNav lang={locale} lesson={lesson} />
-        {lesson.published && <LessonProgress slug={lesson.slug} />}
         {lesson.slug === "double-descent" && (
           <div className="space-y-3">
-            <p className="rounded-md border border-threshold/30 bg-card px-4 py-3 text-sm">
+            <p className="card-3d px-4 py-3 text-sm">
               {t.course.briefing}
             </p>
-            <p className="rounded-md border border-border bg-card px-4 py-3 text-sm">
+            <p className="card-3d px-4 py-3 text-sm">
               {t.course.conditioningLink}{" "}
               <Link
-                className="text-accent underline-offset-2 hover:underline"
+                className="font-extrabold text-accent hover:underline"
                 href={lessonPath(locale, "conditioning")}
               >
                 {t.course.conditioningTitle}.
@@ -85,7 +83,9 @@ export default async function LessonPage({
           id="experiment"
           className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6"
         >
-          <h2 className="mb-3 text-lg font-semibold">{t.course.experiment}</h2>
+          <h2 className="mb-3 scroll-mt-16 text-lg font-extrabold">
+            {t.course.experiment}
+          </h2>
           <LessonExperiment
             experimentId={lesson.experimentId}
             lang={locale}

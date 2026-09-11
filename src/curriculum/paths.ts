@@ -48,3 +48,77 @@ export const LEARNING_PATHS: LearningPath[] = [
 export function getPath(id: string): LearningPath | undefined {
   return LEARNING_PATHS.find((path) => path.id === id);
 }
+
+export const DEFAULT_PATH_ID = "start";
+
+export function resolvePathId(pathId: string | null | undefined): string {
+  if (pathId && getPath(pathId)) return pathId;
+  return DEFAULT_PATH_ID;
+}
+
+/** Neighbors along an active learning path (falls back to start). */
+export function pathNeighbors(
+  slug: string,
+  pathId: string | null | undefined,
+): { prevSlug: string | null; nextSlug: string | null; pathId: string } {
+  const id = resolvePathId(pathId);
+  const path = getPath(id)!;
+  const index = path.slugs.indexOf(slug);
+  if (index < 0) {
+    return { prevSlug: null, nextSlug: null, pathId: id };
+  }
+  return {
+    prevSlug: index > 0 ? path.slugs[index - 1]! : null,
+    nextSlug: index < path.slugs.length - 1 ? path.slugs[index + 1]! : null,
+    pathId: id,
+  };
+}
+
+/** Course-map acts for Fit / Generalize / Scale grouping. */
+export const COURSE_ACTS: Array<{
+  id: "fit" | "generalize" | "scale";
+  slugSet: ReadonlySet<string>;
+}> = [
+  {
+    id: "fit",
+    slugSet: new Set([
+      "functions-and-parameters",
+      "linear-regression",
+      "loss-function",
+      "polynomial-regression",
+      "derivative",
+      "partial-derivative",
+      "gradient",
+      "gradient-descent",
+      "optimization",
+      "normal-equations",
+    ]),
+  },
+  {
+    id: "generalize",
+    slugSet: new Set([
+      "generalization",
+      "overfitting",
+      "regularization",
+    ]),
+  },
+  {
+    id: "scale",
+    slugSet: new Set([
+      "interpolation-threshold",
+      "conditioning",
+      "double-descent",
+      "neural-network",
+      "backpropagation",
+    ]),
+  },
+];
+
+export function actForSlug(
+  slug: string,
+): "fit" | "generalize" | "scale" | null {
+  for (const act of COURSE_ACTS) {
+    if (act.slugSet.has(slug)) return act.id;
+  }
+  return null;
+}

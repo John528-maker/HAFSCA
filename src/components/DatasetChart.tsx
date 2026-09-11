@@ -28,8 +28,8 @@ export default function DatasetChart({ dataset }: Props) {
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
-      <h3 className="text-sm font-semibold uppercase tracking-wider text-muted">
+    <div className="card-3d p-5">
+      <h3 className="text-sm font-extrabold text-muted">
         {d.title}
       </h3>
       <p className="mt-1 text-xs text-muted">

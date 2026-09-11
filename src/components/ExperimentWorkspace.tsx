@@ -68,10 +68,18 @@ export default function ExperimentWorkspace() {
         setProgress({ completed: p.completed, total: p.total }),
       );
       setResult(next);
-      const best = next.results.reduce((a, b) =>
-        b.testMSE < a.testMSE ? b : a,
-      );
-      setSelectedDegree(best.degree);
+      // Land near interpolation — do not pick complexity by minimizing test MSE.
+      const threshold = next.summary.interpolationThreshold;
+      if (threshold !== null && next.results.length > 0) {
+        const nearest = next.results.reduce((a, b) =>
+          Math.abs(b.degree - threshold) < Math.abs(a.degree - threshold)
+            ? b
+            : a,
+        );
+        setSelectedDegree(nearest.degree);
+      } else {
+        setSelectedDegree(next.results[0]?.degree ?? null);
+      }
       setHistory(appendHistory(next));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -95,7 +103,7 @@ export default function ExperimentWorkspace() {
   return (
     <section id="experiments" className="scroll-mt-16">
       <div>
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-muted">
+        <h3 className="text-sm font-extrabold text-muted">
           {t.experiment.title}
         </h3>
         <p className="mt-1 max-w-2xl text-sm text-muted">
@@ -132,6 +140,7 @@ export default function ExperimentWorkspace() {
               }
               selectedDegree={selectedDegree}
               onSelectDegree={setSelectedDegree}
+              showDegreeSelect
             />
 
             <ModelExplorer

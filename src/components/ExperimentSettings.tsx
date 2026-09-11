@@ -45,8 +45,8 @@ export default function ExperimentSettings({
   }
 
   return (
-    <aside className="rounded-lg border border-border bg-card p-5 shadow-sm lg:sticky lg:top-20 lg:self-start">
-      <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">
+    <aside className="card-3d p-5 lg:sticky lg:top-20 lg:self-start">
+      <h2 className="text-sm font-extrabold text-muted">
         {e.settings}
       </h2>
 
@@ -54,7 +54,7 @@ export default function ExperimentSettings({
         <Field label={e.datasetSize} htmlFor="dataset-size">
           <select
             id="dataset-size"
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+            className="min-h-11 w-full rounded-xl border-2 border-border bg-background px-3 py-2 text-sm"
             value={config.datasetSize}
             disabled={running}
             onChange={(ev) => patch({ datasetSize: Number(ev.target.value) })}
@@ -131,7 +131,7 @@ export default function ExperimentSettings({
             value={config.randomSeed}
             disabled={running}
             onChange={(ev) => patch({ randomSeed: Number(ev.target.value) || 0 })}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+            className="min-h-11 w-full rounded-xl border-2 border-border bg-background px-3 py-2 text-sm"
           />
         </Field>
       </div>
@@ -140,32 +140,45 @@ export default function ExperimentSettings({
         type="button"
         onClick={onRun}
         disabled={running}
-        className="mt-6 flex h-11 w-full items-center justify-center rounded-md bg-accent text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+        className="press press-primary mt-6 w-full disabled:cursor-not-allowed disabled:opacity-60"
       >
         {running ? e.running : e.run}
       </button>
 
       {running && progress && (
-        <div className="mt-3" aria-live="polite">
+        <div className="mt-3">
           <div className="mb-1 flex justify-between text-xs text-muted">
             <span>
               {e.degreeProgress} {progress.completed}/{progress.total}
             </span>
-            <span>
+            <span className="tabular-nums">
               {progress.total
                 ? Math.round((100 * progress.completed) / progress.total)
                 : 0}
               %
             </span>
           </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-border">
+          <div
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={progress.total}
+            aria-valuenow={progress.completed}
+            aria-label={e.degreeProgress}
+            className="h-3 overflow-hidden rounded-full bg-border"
+          >
             <div
-              className="h-full bg-accent transition-all"
+              className="h-full bg-feather transition-[width] duration-300"
               style={{
                 width: `${progress.total ? (100 * progress.completed) / progress.total : 0}%`,
               }}
             />
           </div>
+          {/* Update live region only when finished to avoid per-tick announcements. */}
+          {progress.completed >= progress.total && (
+            <p className="sr-only" aria-live="polite">
+              {e.degreeProgress} {progress.completed}/{progress.total}
+            </p>
+          )}
         </div>
       )}
     </aside>

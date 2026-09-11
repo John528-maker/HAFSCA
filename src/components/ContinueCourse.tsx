@@ -4,8 +4,8 @@ import { LESSONS, getLesson, lessonPath } from "@/curriculum/curriculum";
 import { CURRICULUM_VERSION } from "@/curriculum/version";
 import { emptyProgress, loadProgress, subscribeProgress } from "@/lib/progress";
 import { useLanguage } from "@/components/LanguageProvider";
+import Pressable from "@/components/Pressable";
 import type { CourseLocale } from "@/lib/locales";
-import Link from "next/link";
 import { useSyncExternalStore } from "react";
 
 const knownSlugs = LESSONS.map((lesson) => lesson.slug);
@@ -39,20 +39,14 @@ export default function ContinueCourse({
   if (!lesson) return null;
   if (compact) {
     return (
-      <Link
-        href={lessonPath(lang, lesson.slug)}
-        className="text-xs text-accent"
-      >
+      <Pressable href={lessonPath(lang, lesson.slug)} variant="ghost" className="press-sm">
         {t.course.continue}
-      </Link>
+      </Pressable>
     );
   }
   return (
-    <Link
-      href={lessonPath(lang, lesson.slug)}
-      className="inline-flex h-11 items-center rounded-md border border-accent px-5 text-sm font-medium text-accent"
-    >
+    <Pressable href={lessonPath(lang, lesson.slug)} variant="secondary">
       {t.course.continue}: {lesson.title[lang]}
-    </Link>
+    </Pressable>
   );
 }

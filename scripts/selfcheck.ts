@@ -64,6 +64,8 @@ import {
   runBackpropCheck,
 } from "../src/lib/backpropCheck.ts";
 import { parseProgress } from "../src/lib/progress.ts";
+import { assertQuizBank } from "../src/lib/quiz.ts";
+import { QUIZZES } from "../src/content/quizzes.ts";
 import {
   RIDGE_DEFAULTS,
   RIDGE_RHO_ENGINE,
@@ -568,8 +570,12 @@ console.log("17. Activations C §5 contract");
     `sigmoid chain δ_10 is tiny and not (1/4)^10 (got ${sigLast?.delta})`,
   );
   assert(
-    getLesson("gradient")?.experimentId === "activations",
-    "activations lab is attached to the gradient lesson",
+    getLesson("gradient")?.experimentId === undefined,
+    "gradient lesson is calculus text — activations live on neural-network / backprop",
+  );
+  assert(
+    getLesson("neural-network")?.experimentId === "activations",
+    "activations lab is attached to the neural-network lesson",
   );
   assert(
     getLesson("gradient-descent")?.prerequisites.includes("gradient") === true,
@@ -587,6 +593,22 @@ console.log("17. Activations C §5 contract");
   assert(
     getLesson("regularization")?.experimentId === "ridge",
     "regularization exposes the relative-ρ ridge path",
+  );
+  assert(
+    getLesson("polynomial-regression")?.experimentId === "overfitting",
+    "polynomial regression exposes the complexity / U-curve lab",
+  );
+  assert(
+    getLesson("generalization")?.experimentId === "generalization",
+    "generalization exposes the train/valid/test lab",
+  );
+  assert(
+    getLesson("conditioning")?.experimentId === "conditioning",
+    "conditioning exposes the measured-κ lab",
+  );
+  assert(
+    getLesson("derivative")?.experimentId === "finite-diff",
+    "derivative exposes finite-difference vs analytic check",
   );
 }
 
@@ -713,6 +735,25 @@ console.log("20. Backprop finite-difference check + progress parser");
     parsed.completedSlugs.length === 1 && parsed.completedSlugs[0] === "overfitting",
     "unknown completion dropped; known slug kept unique",
   );
+  assert(parsed.activePathId === "start", "missing activePathId defaults to start");
+  const withPath = parseProgress(
+    {
+      schemaVersion: 1,
+      lastLessonSlug: "overfitting",
+      completedSlugs: [],
+      activePathId: "lab",
+      updatedAt: 1,
+    },
+    slugs,
+    1,
+  );
+  assert(withPath.activePathId === "lab", "known activePathId is kept");
+
+  const quizErrors = assertQuizBank(
+    QUIZZES,
+    publishedLessons().map((lesson) => lesson.slug),
+  );
+  assert(quizErrors.length === 0, quizErrors.join("; ") || "quiz bank covers every published lesson");
 }
 
 console.log(`\n${passed} passed, ${failed} failed`);

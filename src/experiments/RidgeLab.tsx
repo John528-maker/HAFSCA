@@ -1,6 +1,7 @@
 "use client";
 
 import { useLanguage } from "@/components/LanguageProvider";
+import { chartTheme } from "@/lib/chartTheme";
 import { cubicTruth, generateCubicDataset, splitCubic } from "@/lib/overfit";
 import {
   RIDGE_DEFAULTS,
@@ -23,20 +24,21 @@ import {
   YAxis,
 } from "recharts";
 
-const COEF_COLORS = [
-  "#111827",
-  "#1d4ed8",
-  "#dc2626",
-  "#059669",
-  "#d97706",
-  "#7c3aed",
-  "#db2777",
+/** Distinct series strokes from theme + a short palette for coefficients. */
+const COEF_STROKES = [
+  chartTheme.foregroundHex,
+  chartTheme.trainHex,
+  chartTheme.testHex,
+  chartTheme.truthHex,
+  chartTheme.thresholdHex,
+  chartTheme.validHex,
   "#0f766e",
   "#4b5563",
   "#ea580c",
-  "#2563eb",
   "#65a30d",
   "#be123c",
+  "#7c2d12",
+  "#1e3a8a",
 ];
 
 export default function RidgeLab() {
@@ -96,8 +98,8 @@ export default function RidgeLab() {
   }, [live]);
 
   return (
-    <div className="space-y-4 rounded-lg border border-border bg-card p-5">
-      <h3 className="text-sm font-semibold uppercase tracking-wider text-muted">
+    <div className="card-3d space-y-4 p-5">
+      <h3 className="text-sm font-extrabold text-muted">
         {r.title}
       </h3>
       <p className="text-sm text-muted">{r.guide}</p>
@@ -105,10 +107,10 @@ export default function RidgeLab() {
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <label className="text-xs text-muted">
-          log₁₀ ρ ({log10Rho.toFixed(2)})
+          {r.rhoLabel} · log₁₀ ρ ({log10Rho.toFixed(2)})
           <input
             type="range"
-            className="mt-1 w-full accent-accent"
+            className="mt-1 w-full accent-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             min={RIDGE_LOG_RHO_MIN}
             max={RIDGE_LOG_RHO_MAX}
             step={0.05}
@@ -144,7 +146,7 @@ export default function RidgeLab() {
           {r.seed}
           <input
             type="number"
-            className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm"
+            className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm tabular-nums focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             value={seed}
             onChange={(event) => setSeed(Number(event.target.value) || 0)}
           />
@@ -152,8 +154,11 @@ export default function RidgeLab() {
       </div>
 
       <dl className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
-        <Stat label="ρ" value={rho.toExponential(2)} />
-        <Stat label="λ = ρ · mean(diag G)" value={live.lambda.toExponential(2)} />
+        <Stat label={r.rhoLabel} value={rho.toExponential(2)} />
+        <Stat
+          label={r.lambdaLabel}
+          value={live.lambda.toExponential(2)}
+        />
         <Stat label="‖θ‖₂" value={nearest.coefNorm.toExponential(2)} />
         <Stat label={r.train} value={nearest.trainMSE.toExponential(3)} />
         <Stat label={r.test} value={nearest.testMSE.toExponential(3)} />
@@ -167,11 +172,24 @@ export default function RidgeLab() {
         <p className="text-xs text-muted">{r.curve}</p>
         <ResponsiveContainer>
           <LineChart data={curveGrid} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e2" />
+            <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.borderHex} />
             <XAxis dataKey="x" tick={{ fontSize: 10 }} />
             <YAxis domain={[-3, 3]} tick={{ fontSize: 10 }} width={36} />
-            <Line type="monotone" dataKey="truth" stroke="#111" strokeDasharray="4 3" dot={false} isAnimationActive={false} />
-            <Line type="monotone" dataKey="fit" stroke="#dc2626" dot={false} isAnimationActive={false} />
+            <Line
+              type="monotone"
+              dataKey="truth"
+              stroke={chartTheme.truthHex}
+              strokeDasharray="4 3"
+              dot={false}
+              isAnimationActive={false}
+            />
+            <Line
+              type="monotone"
+              dataKey="fit"
+              stroke={chartTheme.testHex}
+              dot={false}
+              isAnimationActive={false}
+            />
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -180,15 +198,40 @@ export default function RidgeLab() {
         <p className="text-xs text-muted">{r.mse}</p>
         <ResponsiveContainer>
           <LineChart data={run.path} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e2" />
+            <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.borderHex} />
             <XAxis dataKey="log10Rho" tick={{ fontSize: 10 }} />
-            <YAxis tick={{ fontSize: 10 }} width={44} />
+            <YAxis tick={{ fontSize: 10 }} width={44} className="tabular-nums" />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="trainMSE" stroke="#1d4ed8" dot={false} isAnimationActive={false} name={r.train} />
-            <Line type="monotone" dataKey="testMSE" stroke="#dc2626" dot={false} isAnimationActive={false} name={r.test} />
-            <ReferenceLine x={log10Rho} stroke="#111" strokeDasharray="3 3" />
-            <ReferenceLine x={run.bestLog10Rho} stroke="#059669" strokeDasharray="2 2" />
+            <Line
+              type="monotone"
+              dataKey="trainMSE"
+              stroke={chartTheme.trainHex}
+              strokeDasharray="2 2"
+              dot={false}
+              isAnimationActive={false}
+              name={r.train}
+            />
+            <Line
+              type="monotone"
+              dataKey="testMSE"
+              stroke={chartTheme.testHex}
+              dot={{ r: 2 }}
+              isAnimationActive={false}
+              name={r.test}
+            />
+            <ReferenceLine x={log10Rho} stroke={chartTheme.foregroundHex} strokeDasharray="3 3" />
+            <ReferenceLine
+              x={run.bestLog10Rho}
+              stroke={chartTheme.truthHex}
+              strokeDasharray="2 2"
+              label={{
+                value: r.test,
+                position: "insideTopLeft",
+                fontSize: 10,
+                fill: chartTheme.truthHex,
+              }}
+            />
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -197,16 +240,16 @@ export default function RidgeLab() {
         <p className="text-xs text-muted">{r.coefs}</p>
         <ResponsiveContainer>
           <LineChart data={coefData} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e2" />
+            <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.borderHex} />
             <XAxis dataKey="log10Rho" tick={{ fontSize: 10 }} />
             <YAxis tick={{ fontSize: 10 }} width={44} />
-            <ReferenceLine x={log10Rho} stroke="#111" strokeDasharray="3 3" />
+            <ReferenceLine x={log10Rho} stroke={chartTheme.foregroundHex} strokeDasharray="3 3" />
             {Array.from({ length: degree + 1 }, (_, k) => (
               <Line
                 key={k}
                 type="monotone"
                 dataKey={`t${k}`}
-                stroke={COEF_COLORS[k % COEF_COLORS.length]}
+                stroke={COEF_STROKES[k % COEF_STROKES.length]}
                 dot={false}
                 isAnimationActive={false}
                 strokeWidth={k === 0 ? 1.5 : 1}
@@ -221,9 +264,9 @@ export default function RidgeLab() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <dt className="text-[11px] uppercase tracking-wide text-muted">{label}</dt>
-      <dd className="font-medium text-foreground">{value}</dd>
+    <div className="rounded-md border border-border bg-background px-2 py-1.5">
+      <dt className="text-[10px] text-muted">{label}</dt>
+      <dd className="tabular-nums font-medium">{value}</dd>
     </div>
   );
 }
