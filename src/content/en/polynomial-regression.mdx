@@ -1,0 +1,19 @@
+# What is it?
+
+**Polynomial regression** is linear regression with a richer feature map $\phi(x)=(T_0(x),\ldots,T_d(x))^{\top}$. Degree $d$ is a knob on $p=d+1$, not a different kind of loss.
+
+# Why it matters
+
+The overfitting and double-descent labs already fit these polynomials. Naming the knob *before* the gradient keeps “wiggly curve” from sounding like a new algorithm.
+
+# Intuition
+
+Degree 1 is the live line you just dragged. Degree 3 can follow a cubic truth. Degree 12 can hug noise. Same solver, more columns in $X$.
+
+# Mathematics
+
+This site uses Chebyshev $T_k$ on $[-1,1]$ with arcsine-sampled $x$, so high degree stays numerically usable. Residual and loss are unchanged: $\mathbf r=X\theta-\mathbf y$, $J=\frac1n\lVert\mathbf r\rVert_2^2$.
+
+# Summary
+
+Complexity is the width of $\phi$, not a new definition of error.

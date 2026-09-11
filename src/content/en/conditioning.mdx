@@ -1,0 +1,37 @@
+## What is it?
+
+The **2-norm condition number** of a matrix is
+
+$$
+\kappa_2(A)=\frac{\sigma_{\max}(A)}{\sigma_{\min}(A)}\ge 1.
+$$
+
+When $\kappa$ is huge, small relative changes in the data can cause large relative changes in the computed $\boldsymbol{\theta}$. That is a property of the **problem**, not a proof that the formula is wrong.
+
+## Why it matters
+
+A correct normal equation can still explode. The flagship peak near $p=n$ is mostly **model behavior** (variance), not NaN. Numerical failure is reserved for non-finite values. Do not call a finite, huge test MSE “the computer broke.”
+
+## Intuition
+
+Ill-conditioning is a microscope aimed almost along a surface: a tiny bump in the input looks like a huge slide in the output. Monomial columns $1,x,x^2,\ldots$ point nearly the same way as degree grows. Chebyshev columns re-aim the microscope.
+
+Normal equations **square** the condition number: $\kappa_2(X^{\top}X)=\kappa_2(X)^2$. That is why a QR/SVD of $X$ is better conditioned than forming the Gram matrix — and why GD on a stretched feature needs a smaller $\alpha$.
+
+## Mathematics
+
+**Measured on this repo**, monomial + arcsine nodes: $\kappa(X)$ at degrees $5,10,15,20$ is about $4.6\times10^{1}$, $3.7\times10^{3}$, $3.0\times10^{5}$, $3.1\times10^{7}$ — exponential in $d$.
+
+**Chebyshev + arcsine**, the actual engine: $\kappa(X)$ is essentially **flat**, roughly $1.5$–$3$, through $d\approx 20$. There is no exponential-in-degree story there. The late blow-up is **$p\to n$** (running out of samples on random nodes), not “high degree is ill-conditioned.”
+
+The relative ridge floors $\kappa$ at about $4.6\times10^{8}$ once $d\gtrsim 78$. Printed $\kappa$ in that regime is a ceiling, not extra digits of physics.
+
+**Do not confuse two κs.** The lesson’s measured $\kappa(X)=\sigma_{\max}/\sigma_{\min}$ says how parallel the columns are. The engine’s `regularizedGramConditionUpperBound` $= p/\texttt{RIDGE}+1$ (about $10^{8}$ when $\texttt{RIDGE}=10^{-8}$) is only a **solve-trust** guard — how many digits the regularized Gram solve can claim — not the same object as $\kappa(X)$.
+
+The overfitting lab caps $d\le 12$ at $n_{\mathrm{train}}=40$, where $\kappa(X)\lesssim 2$. That cap is pedagogical and numerical.
+
+Hand check: $A=\begin{pmatrix}1&1\\1&1.001\end{pmatrix}$ has $\kappa_\infty(A)=4004.001$. A relative $5\times10^{-4}$ bump in $b$ can order-one-change the solution.
+
+## Summary
+
+Chebyshev keeps moderate degree honest. The interpolation peak is not a synonym for $\kappa\to\infty$. Ridge floors the Gram; finite peaks are still data, not NaN.

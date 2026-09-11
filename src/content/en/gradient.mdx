@@ -1,0 +1,42 @@
+## What is it?
+
+The **gradient** of $J$ is the column of all partial derivatives:
+
+$$
+\nabla J(\boldsymbol{\theta})=\begin{pmatrix}\partial J/\partial\theta_1\\ \vdots\\ \partial J/\partial\theta_p\end{pmatrix}.
+$$
+
+It is the direction of **steepest ascent**. Gradient descent will walk the other way.
+
+## Why it matters
+
+The backward pass of every training loop is “form $\nabla J$ (or a batch estimate of it).” Closed-form least squares on this site never writes that vector down — it jumps to a critical point. The lab below still needs $\varphi'$, because a chain of maps multiplies one derivative per layer.
+
+## Intuition
+
+If you stand on the loss surface, $\nabla J$ is the uphill compass. Magnitude is steepness. Each coordinate of the compass is one partial from the previous lesson.
+
+## Mathematics
+
+For this site’s MSE,
+
+$$
+\nabla J(\boldsymbol{\theta})=\frac{2}{n}X^{\top}(X\boldsymbol{\theta}-y)=\frac{2}{n}X^{\top}\mathbf{r}.
+$$
+
+Worked check matching the one-parameter derivative: $X=(1,2)^\top$, $y=(3,5)^\top$, $\theta=2$ gives $\mathbf{r}=(-1,-1)^\top$ and $\nabla J(2)=-3$, the same $J'(2)=-3$.
+
+## Experiment
+
+The lab is **not** a neural net. It shows $\varphi$ and $\varphi'$ as **two** charts, then a 1-wide chain
+
+$$
+a_\ell=\varphi(w\,a_{\ell-1}+b),\qquad
+\delta_\ell=\varphi'(w\,a_{\ell-1}+b)\,w\,\delta_{\ell-1}.
+$$
+
+The live recurrence is the truth. For sigmoid, do **not** claim $\delta_L=(1/4)^L$ at the default $a_0=0$, $b=0$: activations move, so the textbook bound $\lvert\delta_L\rvert\le(\lvert w\rvert/4)^L$ is only a bound. ReLU uses this site’s convention $\varphi'(0)=0$; leaky ReLU uses $\varphi'(0)=1$.
+
+## Summary
+
+The gradient is the uphill vector. Activation derivatives are the factors a deep chain multiplies.

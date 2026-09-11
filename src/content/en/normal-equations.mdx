@@ -1,0 +1,45 @@
+## What is it?
+
+The **normal equations** are what you get by setting the MSE gradient to zero:
+
+$$
+X^{\top}X\,\boldsymbol{\theta}=X^{\top}y.
+$$
+
+They are “normal” because the residual $\mathbf{r}=X\boldsymbol{\theta}^\star-y$ is orthogonal to the column space of $X$: $X^{\top}\mathbf{r}=\mathbf{0}$. Residual sign is prediction minus target, the same convention as every lab on this site.
+
+## Why it matters
+
+The live least-squares line and every polynomial fit **are** this linear system (plus a tiny relative ridge). Gradient descent minimizes the same $J$ by walking; this lesson writes the critical-point equation instead.
+
+## Intuition
+
+OLS asks $X\boldsymbol{\theta}$ to be the nearest point in the column space of $X$ to $y$. The leftover error must be perpendicular to that subspace.
+
+When there are more knobs than samples, many $\boldsymbol{\theta}$ hit $y$ exactly. The engine then takes the interpolator with smallest $\lVert\boldsymbol{\theta}\rVert_2$.
+
+## Mathematics
+
+**Tall case** ($p\le n$, independent columns):
+
+$$
+\boldsymbol{\theta}^\star=(X^{\top}X)^{-1}X^{\top}y.
+$$
+
+**Wide case** ($p>n$, independent rows), min-norm interpolator:
+
+$$
+\boldsymbol{\theta}_{\mathrm{mn}}=X^{\top}(XX^{\top})^{-1}y.
+$$
+
+The engine actually solves a **relative ridge** version: $\lambda=\texttt{RIDGE}\cdot\overline{\mathrm{diag}}(G)$ with $\texttt{RIDGE}=10^{-8}$. That is a numerical floor, not a student slider. Primal ($p\le n$) and dual ($p>n$) ridge formulas agree for $\lambda>0$.
+
+Worked numbers: points $(1,1)$, $(2,2)$, $(3,2)$, model $\hat y=\theta_1+\theta_2 x$ give
+
+$$
+X^{\top}X=\begin{pmatrix}3&6\\6&14\end{pmatrix},\qquad X^{\top}y=\begin{pmatrix}5\\11\end{pmatrix}.
+$$
+
+## Summary
+
+Same loss as the charts. Setting $\nabla J=\mathbf{0}$ produces a linear system; ridge in the engine is relative and tiny.

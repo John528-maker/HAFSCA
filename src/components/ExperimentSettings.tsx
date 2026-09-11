@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useLanguage } from "@/components/LanguageProvider";
 import type { ExperimentConfig } from "@/types/experiment";
 import {
+  defaultMaxComplexity,
   EXPERIMENT_CONFIG,
   sliderMaxComplexity,
 } from "@/lib/experiment";
@@ -26,6 +27,7 @@ export default function ExperimentSettings({
   const { t } = useLanguage();
   const e = t.experiment;
   const nTrain = Math.floor(config.datasetSize * config.trainRatio);
+  const minTrainRatio = Math.min(0.8, 10 / config.datasetSize);
   const maxSlider = sliderMaxComplexity(nTrain);
   const thresholdDeg = nTrain - 1;
   const beyondCap = thresholdDeg > EXPERIMENT_CONFIG.MAX_COMPLEXITY_HARD_CAP;
@@ -33,18 +35,18 @@ export default function ExperimentSettings({
   function patch(partial: Partial<ExperimentConfig>) {
     const next = { ...config, ...partial };
     if (partial.datasetSize !== undefined) {
-      const nt = Math.floor(partial.datasetSize * next.trainRatio);
-      next.maxComplexity = Math.min(
-        2 * nt,
-        EXPERIMENT_CONFIG.MAX_COMPLEXITY_HARD_CAP,
-      );
+      next.trainRatio = Math.max(next.trainRatio, 10 / partial.datasetSize);
+    }
+    if (partial.datasetSize !== undefined || partial.trainRatio !== undefined) {
+      const nt = Math.floor(next.datasetSize * next.trainRatio);
+      next.maxComplexity = defaultMaxComplexity(nt);
     }
     onChange(next);
   }
 
   return (
-    <aside className="rounded-lg border border-border bg-card p-5 shadow-sm lg:sticky lg:top-20 lg:self-start">
-      <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">
+    <aside className="card-3d p-5 lg:sticky lg:top-20 lg:self-start">
+      <h2 className="text-sm font-extrabold text-muted">
         {e.settings}
       </h2>
 
@@ -52,7 +54,7 @@ export default function ExperimentSettings({
         <Field label={e.datasetSize} htmlFor="dataset-size">
           <select
             id="dataset-size"
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+            className="min-h-11 w-full rounded-xl border-2 border-border bg-background px-3 py-2 text-sm"
             value={config.datasetSize}
             disabled={running}
             onChange={(ev) => patch({ datasetSize: Number(ev.target.value) })}
@@ -106,13 +108,18 @@ export default function ExperimentSettings({
         <Field label={e.trainTestSplit} htmlFor="split">
           <input
             id="split"
-            type="text"
-            readOnly
-            value={`${Math.round(config.trainRatio * 100)} / ${Math.round((1 - config.trainRatio) * 100)}`}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-muted"
+            type="range"
+            min={minTrainRatio}
+            max={0.8}
+            step={0.01}
+            value={config.trainRatio}
+            disabled={running}
+            onChange={(ev) => patch({ trainRatio: Number(ev.target.value) })}
+            className="w-full accent-accent"
             aria-describedby="split-help"
           />
           <p id="split-help" className="mt-1 text-xs text-muted">
+            {`${Math.round(config.trainRatio * 100)} / ${Math.round((1 - config.trainRatio) * 100)} · `}
             {e.splitHelp}
           </p>
         </Field>
@@ -124,7 +131,7 @@ export default function ExperimentSettings({
             value={config.randomSeed}
             disabled={running}
             onChange={(ev) => patch({ randomSeed: Number(ev.target.value) || 0 })}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+            className="min-h-11 w-full rounded-xl border-2 border-border bg-background px-3 py-2 text-sm"
           />
         </Field>
       </div>
@@ -133,32 +140,45 @@ export default function ExperimentSettings({
         type="button"
         onClick={onRun}
         disabled={running}
-        className="mt-6 flex h-11 w-full items-center justify-center rounded-md bg-accent text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+        className="press press-primary mt-6 w-full disabled:cursor-not-allowed disabled:opacity-60"
       >
         {running ? e.running : e.run}
       </button>
 
       {running && progress && (
-        <div className="mt-3" aria-live="polite">
+        <div className="mt-3">
           <div className="mb-1 flex justify-between text-xs text-muted">
             <span>
               {e.degreeProgress} {progress.completed}/{progress.total}
             </span>
-            <span>
+            <span className="tabular-nums">
               {progress.total
                 ? Math.round((100 * progress.completed) / progress.total)
                 : 0}
               %
             </span>
           </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-border">
+          <div
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={progress.total}
+            aria-valuenow={progress.completed}
+            aria-label={e.degreeProgress}
+            className="h-3 overflow-hidden rounded-full bg-border"
+          >
             <div
-              className="h-full bg-accent transition-all"
+              className="h-full bg-feather transition-[width] duration-300"
               style={{
                 width: `${progress.total ? (100 * progress.completed) / progress.total : 0}%`,
               }}
             />
           </div>
+          {/* Update live region only when finished to avoid per-tick announcements. */}
+          {progress.completed >= progress.total && (
+            <p className="sr-only" aria-live="polite">
+              {e.degreeProgress} {progress.completed}/{progress.total}
+            </p>
+          )}
         </div>
       )}
     </aside>

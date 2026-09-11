@@ -15,9 +15,9 @@ export default function ExperimentHistory({ entries, onReload, onClear }: Props)
   const h = t.history;
 
   return (
-    <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
+    <div className="card-3d p-5">
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-muted">
+        <h3 className="text-sm font-extrabold text-muted">
           {h.title}
         </h3>
         {entries.length > 0 && (
@@ -55,7 +55,7 @@ export default function ExperimentHistory({ entries, onReload, onClear }: Props)
               <button
                 type="button"
                 onClick={() => onReload(e)}
-                className="h-8 shrink-0 rounded-md border border-border px-3 text-xs font-medium hover:bg-background"
+                className="press press-secondary press-sm"
               >
                 {h.loadSettings}
               </button>

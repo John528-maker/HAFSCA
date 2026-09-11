@@ -1,0 +1,25 @@
+# What is it?
+
+A **loss** is a number that says how unhappy the model is on the training points. This course uses mean squared error
+
+$$
+J(\theta)=\frac{1}{n}\sum_{i=1}^{n}(\hat y_i-y_i)^{2}.
+$$
+
+There is **no** $\tfrac12$ in front. The charts’ $y$-axis is this $J$.
+
+# Why it matters
+
+Without a loss, “better fit” is a vibe. With $J$, every later tool — derivative, gradient, gradient descent — has a job: make this number smaller.
+
+# Intuition
+
+Each residual $\hat y_i-y_i$ is a signed miss. Squaring forgets the sign and punishes large misses more. Averaging by $n$ keeps the scale comparable when you add points.
+
+# Mathematics
+
+In matrix form $J(\theta)=\frac1n\lVert X\theta-y\rVert_2^2$. Differentiating gives $\nabla J=\frac2n X^{\top}(X\theta-y)$. The extra $2$ is why the Hessian entry $H_{22}$ for intercept-plus-slope models equals $2$, not $1$.
+
+# Summary
+
+Loss is the named $y$-axis of every error chart on this site.

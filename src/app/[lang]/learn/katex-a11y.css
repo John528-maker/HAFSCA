@@ -1,0 +1,13 @@
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  padding-bottom: 0.25rem;
+}
+
+.katex-display:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Do not override .katex-mathml { position } — KaTeX clips MathML for AT. */

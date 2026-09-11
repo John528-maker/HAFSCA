@@ -1,0 +1,21 @@
+# What is it?
+
+**Overfitting** is when training error keeps falling while error on unseen $x$ rises. The model is using extra capacity to memorize noise.
+
+# Why it matters
+
+A smaller training MSE is not a certificate of a better model. You need a check the training routine did not get to peek at — here, error against the true cubic $f$, with noisy labels shown as a second curve.
+
+# Intuition
+
+A cubic truth plus noise: degrees $3$–$5$ often sit on a **plateau**. The lab will **not** say “the best degree is $3$ because that is the true degree.” The data do not support a unique winner.
+
+# Experiment
+
+The slider caps complexity at degree **$12$**. That cap is in the code, not only in this paragraph. Some seeds (try $1$) show **no clean sweet spot**; the note will say so.
+
+A second lab resamples $M$ training sets and fans the fitted curves. Test error in expectation is noise $+$ bias$^2$ $+$ variance. The stacked bars use divisor $M-1$ and a debiased bias$^2$; they are **not** holdout test MSE.
+
+# Summary
+
+Watch train vs test together. If only train is falling, you are not done asking questions.

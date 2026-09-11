@@ -11,10 +11,28 @@
 export const RCOND = 1e-12;
 
 /**
- * Ridge on the Gram matrix. Ceiling: biases the exact min-norm interpolant
- * slightly. Upgrade path: LAPACK gelsd / WASM SVD if zero ridge is required.
+ * Relative ridge on the Gram matrix. Scaling by the mean diagonal keeps the
+ * Tikhonov regularization dimensionless as the polynomial degree changes.
+ * 1e-8 is small enough to leave well-conditioned fits unchanged while
+ * preventing near-null Gram modes from amplifying round-off and label noise.
  */
-export const RIDGE = 1e-10;
+export const RIDGE = 1e-8;
+
+/**
+ * Conservative κ upper bound for the regularized Gram matrix.
+ *
+ * For positive-semidefinite G and λ = RIDGE · trace(G) / m:
+ * λmax(G + λI) ≤ trace(G) + λ and λmin(G + λI) ≥ λ, hence
+ * κ(G + λI) ≤ m / RIDGE + 1. This costs nothing to evaluate and avoids an
+ * O(m³) eigendecomposition for every point in an interactive sweep.
+ */
+export function regularizedGramConditionUpperBound(
+  sampleCount: number,
+  parameterCount: number,
+): number {
+  const gramSize = Math.min(sampleCount, parameterCount);
+  return gramSize / RIDGE + 1;
+}
 
 /**
  * Solve min-norm least squares: argmin ||X θ - y||₂ with min ||θ||₂.
@@ -29,18 +47,21 @@ export function minNormLeastSquares(X: number[][], y: number[]): number[] {
 
   if (p <= n) {
     const XtX = matMul(transpose(X), X);
-    addRidge(XtX, RIDGE);
+    addRelativeRidge(XtX);
     const Xty = matVec(transpose(X), y);
     return solveSymmetric(XtX, Xty);
   }
 
   const K = matMul(X, transpose(X));
-  addRidge(K, RIDGE);
+  addRelativeRidge(K);
   const alpha = solveSymmetric(K, y);
   return matVec(transpose(X), alpha);
 }
 
-function addRidge(A: number[][], lambda: number): void {
+function addRelativeRidge(A: number[][]): void {
+  let trace = 0;
+  for (let i = 0; i < A.length; i++) trace += A[i]![i]!;
+  const lambda = RIDGE * (trace / A.length);
   for (let i = 0; i < A.length; i++) A[i]![i]! += lambda;
 }
 

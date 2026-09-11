@@ -1,0 +1,35 @@
+# What is it?
+
+**Linear regression** means the prediction is linear in the **parameters** $\theta$, not necessarily in $x$:
+
+$$
+\hat y = \theta^{\top}\phi(x).
+$$
+
+A straight line $\hat y = wx + b$ is the two-parameter case $\phi(x)=(1,x)^{\top}$. A polynomial in $x$ is still linear regression in $\theta$.
+
+# Why it matters
+
+The live labs on this site fit polynomials. They are linear models in Chebyshev features. The scatter lab below is the same criterion with $p=2$: unique intercept and slope that minimize mean squared *vertical* error.
+
+# Intuition
+
+Drag an endpoint. The line rotates more than when you drag a point near $\bar x$. That is leverage, not a drawing accident.
+
+# Mathematics
+
+Residual convention: $r_i=\hat y_i-y_i=wx_i+b-y_i$. Loss $J=\frac1n\sum r_i^2$ (no $\tfrac12$). If intercept is on and $S_{xx}=\sum(x_i-\bar x)^2>0$,
+
+$$
+w=\frac{S_{xy}}{S_{xx}},\qquad b=\bar y-w\bar x.
+$$
+
+If all $x$ values coincide, there is **no unique slope**. The lab checks $S_{xx}$ *before* calling the solver, so ridge cannot invent a fake line.
+
+# Experiment
+
+Use the lab. Reset with $\sigma=0$ to recover $(w,b)\approx(0.8,0.15)$. Add the outlier and watch one bar dominate the MSE stack.
+
+# Summary
+
+If you remember one sentence: **linear in $\theta$, and the line is the vertical-MSE minimizer, not a freehand fit.**

@@ -21,8 +21,8 @@ export default function ExperimentSummary({ summary }: Props) {
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
-      <h3 className="text-sm font-semibold uppercase tracking-wider text-muted">
+    <div className="card-3d p-5">
+      <h3 className="text-sm font-extrabold text-muted">
         {s.title}
       </h3>
       <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -50,12 +50,24 @@ export default function ExperimentSummary({ summary }: Props) {
           value={summary.minTestError.toExponential(3)}
         />
         <Item
+          label={s.minNoisyTest}
+          value={summary.minNoisyTestError.toExponential(3)}
+        />
+        <Item
           label={s.doubleDescent}
           value={formatVerdict(locale, summary.doubleDescentStatus)}
         />
       </dl>
       {summary.thresholdBeyondSweep && (
         <p className="mt-3 text-xs text-threshold">{s.beyondSweep}</p>
+      )}
+      {summary.doubleDescentStatus === "Sweep Range Exhausted" && (
+        <p className="mt-3 text-xs text-threshold">{s.sweepRangeExhausted}</p>
+      )}
+      {!summary.testEstimateReliable && (
+        <p className="mt-3 text-xs text-threshold">
+          {s.testEstimateWarning}
+        </p>
       )}
     </div>
   );
@@ -64,8 +76,8 @@ export default function ExperimentSummary({ summary }: Props) {
 function Item({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-[11px] uppercase tracking-wide text-muted">{label}</dt>
-      <dd className="mt-0.5 text-sm font-medium">{value}</dd>
+      <dt className="text-[11px] tracking-wide text-muted">{label}</dt>
+      <dd className="mt-0.5 text-sm font-medium tabular-nums">{value}</dd>
     </div>
   );
 }

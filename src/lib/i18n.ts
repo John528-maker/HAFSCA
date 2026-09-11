@@ -6,7 +6,233 @@ export const LOCALE_STORAGE_KEY = "ai-research-lab.locale";
 
 const en = {
   siteName: "AI Research Lab",
-  nav: { experiments: "Experiments", concepts: "Concepts", about: "About" },
+  skipToContent: "Skip to content",
+  nav: {
+    home: "Home",
+    learn: "Course",
+    experiments: "Lab",
+    concepts: "Concepts",
+    about: "About",
+  },
+  course: {
+    start: "Start the course",
+    lab: "Open the interpolation lab",
+    map: "Course map",
+    progressOf: (done: number, total: number) => `${done} / ${total}`,
+    lessonsCount: (done: number, total: number) =>
+      `${done} of ${total} lessons`,
+    upNext: "Up next",
+    review: "Review",
+    startLesson: "Start",
+    coming: "This lesson is not published yet.",
+    prereq: "Recommended first:",
+    prereqMissing:
+      "This lesson assumes work you have not marked complete yet. Open a prerequisite first, or continue anyway.",
+    continueAnyway: "Continue anyway",
+    skipExperiment: "Skip to experiment",
+    hasExperiment: "Has experiment",
+    actFit: "Fit",
+    actGeneralize: "Generalize",
+    actScale: "Scale",
+    prev: "Previous",
+    next: "Next",
+    experiment: "Experiment",
+    briefing:
+      "This lab shows a genuine variance explosion near interpolation, then partial recovery. It does not claim a second descent that beats the first minimum.",
+    conditioningLink:
+      "A finite peak is usually variance, not NaN. The numerical story — Chebyshev staying flat, then p → n — is the",
+    conditioningTitle: "conditioning lesson",
+    continue: "Continue",
+    markDone: "Mark complete",
+    done: "Completed — unmark",
+    completed: "completed",
+    labsIndex: "Labs",
+  },
+  quiz: {
+    check: "Check",
+    startReview: "Start review",
+    questionOf: (n: number, total: number) => `Question ${n} of ${total}`,
+    correct: "Nice!",
+    wrong: "Not quite",
+    passed: "Lesson complete",
+    keepGoing: "Almost — try the review again",
+    score: (n: number, total: number) => `${n} / ${total} correct`,
+    passedHint: "Every review question is right. Open the lab, or go on.",
+    retryHint: "Wrong answers are OK. Read the note, then try the three questions again.",
+    retry: "Retry review",
+    openLab: "Open the lab",
+    closeLesson: "Close",
+  },
+  gd: {
+    title: "Gradient descent",
+    play: "Play",
+    pause: "Pause",
+    step: "Step",
+    reset: "Reset",
+    alpha: "Learning rate α",
+    scale: "Feature scale s",
+    w0: "Initial w",
+    b0: "Initial b",
+    iterations: "Iterations T",
+    noise: "Noise σ",
+    seed: "Seed",
+    status: "Status",
+    monotonic: "Monotonic",
+    oscillating: "Oscillating",
+    diverging: "Diverging",
+    aha: "Lock α at 0.2 and drag feature scale to 10, then play. The same algorithm flies off the bowl because you stretched a feature.",
+    lossVsT: "Loss vs iteration",
+    logLoss: "Log J",
+    linearLoss: "Linear J",
+  },
+  lr: {
+    title: "Live least squares",
+    guide:
+      "This line is not drawn by eye. It is the unique intercept and slope that make the average squared vertical gap as small as possible.",
+    hint: "Drag a point. Click empty space to add one (up to 24). Residuals are vertical: ŷ − y.",
+    noise: "Noise σ",
+    seed: "Seed",
+    intercept: "Intercept",
+    truth: "Show truth",
+    residuals: "Show residuals",
+    reset: "Reset",
+    outlier: "Add outlier",
+    deletePoint: "Delete selected",
+    status: "Status",
+    ok: "Unique fit",
+    needSpread: "No unique slope — spread the points in x.",
+    needPoints: "Need at least two points.",
+    aha: "The rightmost large residual accounts for more than 40% of the MSE. Drag that point onto the line and watch MSE collapse.",
+  },
+  overfit: {
+    title: "Overfitting",
+    run: "Fit degrees 0–12",
+    seed: "Seed",
+    noise: "Noise σ",
+    degree: "Degree d",
+    train: "Training",
+    test: "Test",
+    truth: "True cubic",
+    fit: "Fitted curve",
+    fitTitle: (d: number) => `Fit at degree ${d}`,
+    fitHint:
+      "Drag degree past 3–5: the black curve peels off the dashed cubic and chases blue training points.",
+    plateau:
+      "On a typical sample the test-error minimum is a plateau across degrees 3–5, not a single true degree.",
+    noSweet:
+      "This sample does not show a clean sweet spot. That is expected for some seeds — change the seed.",
+    uCurve:
+      "Training error falls while test error eventually rises: a U-shaped test curve, not a proof that degree 3 is uniquely best.",
+    best: (degree: number, cap: number) =>
+      `Lowest truth-target test MSE on this sample: degree ${degree} (not a selection rule). Cap ${cap}.`,
+  },
+  gen: {
+    title: "Train / validation / test",
+    guide:
+      "Pick the degree on the purple validation curve. The red test curve is the exam you take once — peeking at it to choose complexity invents an optimistic score.",
+    seed: "Seed",
+    noise: "Noise σ",
+    nTrain: "Train n",
+    nValid: "Valid n",
+    nTest: "Test n",
+    honest: "Honest pick (min valid)",
+    peek: "Peeking pick (min test)",
+    aha: "The test-minimizing degree looks better on the exam because you used the exam to study. Prefer the validation pick.",
+    caption:
+      "60 points → 60% train / 20% valid / 20% test. Primary test MSE is still versus the true cubic.",
+    train: "Train MSE",
+    valid: "Valid MSE",
+    test: "Test MSE vs f",
+    validPick: "valid pick",
+    testPick: "test peek",
+  },
+  cond: {
+    title: "Conditioning (measured κ)",
+    guide:
+      "These numbers are measured κ(X) on this repo’s arcsine nodes — how parallel the feature columns are. They are not the regularized Gram upper bound used as a solve guard.",
+    twoKappas:
+      "Two different κs: measured κ(X) teaches the lesson; gramSize/RIDGE+1 only decides when float64 has too few trustworthy digits.",
+    tableCaption: "Measured κ(X) vs degree (arcsine nodes)",
+    degree: "Degree",
+    monomial: "Monomial",
+    chebyshev: "Chebyshev",
+    vsUniform: "Chebyshev+uniform ≈",
+    measured: "Measured κ(X)",
+    measuredDef:
+      "Singular-value ratio of the design matrix. Flat for Chebyshev+arcsine until p approaches n.",
+    guard: "Solve guard (not a student κ)",
+    guardDef: (example: string, ceiling: string) =>
+      `≤ m/RIDGE+1 (e.g. ≈ ${example} at m=40). Ridge floors the Gram near ${ceiling} for d ≳ 78.`,
+    monoChart: "Monomial κ (log scale) — exponential",
+    chebChart: "Chebyshev κ — flat, then p→n",
+  },
+  act: {
+    title: "Activations",
+    guide:
+      "A deep chain multiplies one φ′(z) per layer (and a weight). If each factor is small, ten layers leave almost nothing. Drag depth with sigmoid, then switch to ReLU or identity.",
+    activation: "Activation",
+    saturated: "saturated",
+    sigmoidNote: "σ′ = 0.01 at z = ±log(99)",
+    chain: "1-wide chain",
+    chainNote:
+      "Live recurrence is the truth. For sigmoid, |δ_L| ≤ (|w|/4)^L is a bound, not the measured value at a₀ = 0, b = 0.",
+    bound: "Textbook bound |δ_L| ≤ (|w|/4)^L for sigmoid, shown only as a bound.",
+    exploded: "exploded",
+    dead: "Dead ReLU",
+    deadNote:
+      "ReLU φ′(0) = 0 on this site. If every z ≤ 0, the gradient in (w, b) is exactly 0 on this batch.",
+    useLeaky: "Use leaky ReLU (never fully dies)",
+    deadFrac: "Dead fraction",
+    allDead:
+      "Gradient w.r.t. (w, b) is exactly 0 on this batch. GD cannot revive this unit.",
+  },
+  bv: {
+    title: "Bias and variance",
+    guide:
+      "Each faint line is a different dataset from the same cubic process. Complexity makes them disagree. Disagreement is variance.",
+    notHoldout:
+      "These bars are grid-versus-the-true-cubic plus a known σ². They are not holdout test MSE.",
+    degree: "Degree d",
+    noise: "Noise σ",
+    seed: "Seed",
+    run: "Resample M datasets",
+    smallM: "M is small, so the variance bars themselves jitter.",
+    bias2: "Debiased bias²",
+    variance: "Variance (M−1)",
+    direct: "Direct mean (ĝ − f)²",
+    spaghetti: "Fits (clipped to [−4, 4])",
+    bars: "Stacked debiased bias² + variance + σ² versus degree",
+  },
+  ridge: {
+    title: "Ridge path",
+    guide:
+      "The lever is relative ρ, not a smaller degree. Drag it and the wiggly degree-10 fit relaxes. Ridge shrinks toward 0 in Chebyshev coordinates, not toward the true cubic.",
+    relative:
+      "Student control is ρ (relative). Applied λ = ρ · mean(diag G) — not textbook absolute λ, and not nλ on averaged loss. The flagship engine keeps ρ = 10⁻⁸.",
+    rhoLabel: "ρ (relative)",
+    lambdaLabel: "applied λ",
+    degree: "Degree d",
+    noise: "Noise σ",
+    seed: "Seed",
+    train: "Train MSE",
+    test: "Test MSE vs f",
+    dip: "This sample has an interior test-error dip along the path.",
+    noDip: "This sample has no interior dip — try another seed. That is allowed.",
+    axis: "x is log₁₀ ρ, larger ρ to the right (more shrinkage).",
+    shrinkNote: "Ridge does not know the true cubic (0, 0.2, 0, 0.7).",
+    curve: "Fit vs true cubic",
+    mse: "Train and truth-target test MSE vs log₁₀ ρ",
+    coefs: "Chebyshev coefficients vs log₁₀ ρ",
+  },
+  bp: {
+    title: "Chain rule vs finite difference",
+    guide:
+      "One sample, J = (σ(wx+b) − y)². The analytic ∂J/∂w is 2(ŷ−y)σ′(z)x. Central differences should match. This is not training a net.",
+    relW: "rel. err. w",
+    relB: "rel. err. b",
+    match: "Analytic gradient matches the finite-difference check.",
+    mismatch: "The two derivatives disagree. Try a smaller h, or move off a kink.",
+  },
   languageToggle: "한국어",
   hero: {
     eyebrow: "AI Research Lab",
@@ -19,13 +245,13 @@ const en = {
   experiment: {
     title: "Double Descent Experiment",
     description:
-      "Change the settings, run the experiment, and watch how training and test error change as model complexity grows — including past the interpolation threshold.",
+      "Observe the expected variance explosion near interpolation, then test how far error recovers. The lab distinguishes partial recovery, a competitive second descent, an exhausted sweep, and an actual numerical failure.",
     settings: "Experiment Settings",
     datasetSize: "Dataset Size",
     noiseLevel: "Noise Level",
     maxComplexity: "Max Model Complexity",
     trainTestSplit: "Train / Test Split",
-    splitHelp: "Fixed at 80 / 20 for this MVP.",
+    splitHelp: "Adjust the split; at least 10 points are kept for training.",
     randomSeed: "Random Seed",
     run: "Run Experiment",
     running: "Running…",
@@ -51,29 +277,37 @@ const en = {
     datasetSize: "Dataset Size",
     noiseLevel: "Noise Level",
     randomSeed: "Random Seed",
-    bestTest: "Best Test Performance",
+    bestTest: "Lowest truth-target test MSE (not a selection rule)",
     bestDegree: (d: number) => `Degree ${d}`,
     interpolationThreshold: "Interpolation Threshold",
     degree: (d: number) => `Degree ${d}`,
     notReached: "Not reached",
     minTrain: "Minimum Training Error",
-    minTest: "Minimum Test Error",
+    minTest: "Minimum Test MSE vs True Function",
+    minNoisyTest: "Minimum Test MSE vs Noisy Labels",
     doubleDescent: "Double Descent Evidence",
     beyondSweep:
       "The expected interpolation threshold (near train-set size) is beyond this sweep's max complexity. Try a smaller dataset size to observe the threshold and potential double descent.",
+    sweepRangeExhausted:
+      "Test error was still falling at the end of the sweep. Extend the complexity range before drawing a conclusion.",
+    testEstimateWarning:
+      "This verdict is low-confidence because the test set has fewer than 160 points. Small test sets produced unstable verdicts in calibration.",
   },
   errorChart: {
     title: "Model Complexity vs Error",
-    hint: "Click a point to inspect that model.",
+    hint: "Click a point or use the degree control to inspect that model.",
     selected: (d: number) => `Selected: degree ${d}.`,
     empty: "Model complexity vs error will appear here after you run an experiment.",
     log: "Log",
     linear: "Linear",
+    scaleGroup: "Y-axis scale",
+    degreeSelect: "Degree",
     xAxis: "Model Complexity (degree)",
     yAxisLog: "MSE (log)",
     yAxis: "MSE",
     trainError: "Training Error",
-    testError: "Test Error",
+    testError: "Test Error vs True Function",
+    noisyTestError: "Test Error vs Noisy Labels",
     interpolationThreshold: "Interpolation Threshold",
     degree: (d: number | string) => `Degree ${d}`,
   },
@@ -83,7 +317,8 @@ const en = {
     polynomialDegree: "Polynomial Degree",
     parameters: "Parameters",
     trainMSE: "Training MSE",
-    testMSE: "Test MSE",
+    testMSE: "Test MSE vs True Function",
+    noisyTestMSE: "Test MSE vs Noisy Labels",
     generalizationGap: "Generalization Gap",
     input: "Input (x)",
     training: "Training",
@@ -99,17 +334,25 @@ const en = {
     testDecreases:
       "As model complexity increases from the simplest models, test error decreases. The model is gaining enough flexibility to fit the underlying pattern.",
     threshold: (degree: number, mse?: string) =>
-      `Training error first drops below the interpolation threshold near degree ${degree}` +
+      `The theoretical interpolation threshold p = n is degree ${degree}` +
       (mse ? ` (train MSE ≈ ${mse})` : "") +
-      ". Around this complexity the model can nearly interpolate the training set.",
+      ". The displayed training error shows how closely the regularized fit interpolates.",
     peakNearThreshold: (degree: number) =>
-      `Near the interpolation threshold, training error is very low while test error rises (peak near degree ${degree}). This matches the expected behaviour around the interpolation threshold.`,
-    clearDoubleDescent:
-      "After the test-error peak near the interpolation region, test error decreases again as complexity grows further. This second descent is a clear instance of the double descent pattern in this run.",
-    possibleDoubleDescent:
-      "After a rise in test error, a later decrease is visible. This may indicate double descent, but the pattern is not strong enough to call it conclusive for this run.",
-    noDoubleDescent:
-      "No clear second descent in test error was observed after the classical U-shaped region (or the interpolation peak). Double descent is not claimed for this run.",
+      `Near the interpolation threshold, test error peaks around degree ${degree}. This is the genuine statistical variance explosion predicted by theory, not evidence that the computation failed.`,
+    trueDoubleDescent:
+      "After the interpolation peak, test error fell below the first sweet-spot minimum. With a sufficiently large test set, this run shows true double descent.",
+    competitiveSecondDescent:
+      "After the interpolation peak, test error fell to at most twice the first sweet-spot minimum. The second descent is competitive, although it did not meet the reliable true-double-descent criterion.",
+    partialRecovery:
+      "After the interpolation peak, test error fell substantially but remained more than twice the first sweet-spot minimum. This is a real partial recovery, not a competitive double descent.",
+    variancePeakWithoutRecovery:
+      "A genuine variance peak appeared near interpolation, but no substantial second descent followed within the completed sweep.",
+    numericalFailure:
+      "The run produced non-finite values or a conditioning bound that leaves too little meaningful float64 precision. This is an actual numerical failure rather than statistical variance.",
+    sweepRangeExhausted:
+      "The sweep ended while test error was still falling, so the endpoint is not a second minimum. Extend the complexity range before deciding whether double descent occurred.",
+    noSecondDescent:
+      "No visible interpolation-peak-to-second-descent pattern was observed. Double descent is not claimed for this run.",
   },
   history: {
     title: "Experiment History",
@@ -139,15 +382,245 @@ const en = {
   },
   footer: "AI Research Lab · Educational experiment platform",
   verdicts: {
-    "Clear Double Descent": "Clear Double Descent",
-    "Possible Double Descent": "Possible Double Descent",
-    "No Clear Double Descent": "No Clear Double Descent",
+    "True Double Descent": "True Double Descent",
+    "Competitive Second Descent": "Competitive Second Descent",
+    "Partial Recovery": "Partial Recovery",
+    "Variance Peak Without Recovery": "Variance Peak Without Recovery",
+    "No Second Descent Observed": "No Second Descent Observed",
+    "Sweep Range Exhausted": "Sweep Range Exhausted",
+    "Numerical Failure": "Numerical Failure",
   } satisfies Record<DoubleDescentVerdict, string>,
 } as const;
 
 const ko = {
   siteName: "AI Research Lab",
-  nav: { experiments: "실험", concepts: "개념", about: "소개" },
+  skipToContent: "본문으로 건너뛰기",
+  nav: {
+    home: "홈",
+    learn: "수업",
+    experiments: "실험실",
+    concepts: "개념",
+    about: "소개",
+  },
+  course: {
+    start: "수업 시작하기",
+    lab: "보간 실험 열기",
+    map: "수업 지도",
+    progressOf: (done: number, total: number) => `${done} / ${total}`,
+    lessonsCount: (done: number, total: number) =>
+      `${total}개 중 ${done}개 완료`,
+    upNext: "다음 수업",
+    review: "복습",
+    startLesson: "시작",
+    coming: "이 수업은 아직 공개되지 않았습니다.",
+    prereq: "먼저 보면 좋은 수업:",
+    prereqMissing:
+      "이 수업은 아직 완료로 표시하지 않은 선수 수업을 가정합니다. 선수를 먼저 열거나, 그냥 계속하세요.",
+    continueAnyway: "그래도 계속",
+    skipExperiment: "실험으로 건너뛰기",
+    hasExperiment: "실험 있음",
+    actFit: "맞춤",
+    actGeneralize: "일반화",
+    actScale: "확장",
+    prev: "이전",
+    next: "다음",
+    experiment: "실험",
+    briefing:
+      "이 실험은 보간 근처의 실제 분산 폭증과 그 이후의 부분 회복을 보여 줍니다. 두 번째 하강이 첫 최소점보다 좋아진다고 주장하지 않습니다.",
+    conditioningLink:
+      "유한한 봉우리는 대개 분산이지 NaN이 아닙니다. 체비쇼프가 평탄하다가 p → n에서 나빠지는 수치 이야기는",
+    conditioningTitle: "조건수 수업",
+    continue: "이어서 보기",
+    markDone: "완료로 표시",
+    done: "완료됨 — 해제",
+    completed: "완료",
+    labsIndex: "실험 목록",
+  },
+  quiz: {
+    check: "확인",
+    startReview: "복습 시작",
+    questionOf: (n: number, total: number) => `문제 ${n} / ${total}`,
+    correct: "맞아요!",
+    wrong: "아직 아니에요",
+    passed: "수업 완료",
+    keepGoing: "거의 다 왔어요. 복습을 다시 해보세요",
+    score: (n: number, total: number) => `${n} / ${total} 맞힘`,
+    passedHint: "복습 문제를 모두 맞혔습니다. 실험을 열거나 다음으로 가세요.",
+    retryHint: "틀려도 됩니다. 설명을 읽고, 세 문제를 다시 풀어 보세요.",
+    retry: "복습 다시",
+    openLab: "실험 열기",
+    closeLesson: "닫기",
+  },
+  gd: {
+    title: "경사 하강법",
+    play: "재생",
+    pause: "일시정지",
+    step: "한 걸음",
+    reset: "초기화",
+    alpha: "학습률 α",
+    scale: "특성 스케일 s",
+    w0: "초기 w",
+    b0: "초기 b",
+    iterations: "반복 T",
+    noise: "노이즈 σ",
+    seed: "시드",
+    status: "상태",
+    monotonic: "단조 수렴",
+    oscillating: "진동하며 수렴",
+    diverging: "발산",
+    aha: "α를 0.2에 고정하고 특성 스케일을 10으로 올린 뒤 재생해 보세요. 알고리즘은 그대로인데 특성을 늘렸기 때문에 사발을 벗어납니다.",
+    lossVsT: "반복 대비 손실",
+    logLoss: "로그 J",
+    linearLoss: "선형 J",
+  },
+  lr: {
+    title: "실시간 최소제곱",
+    guide:
+      "이 직선은 눈으로 그린 것이 아닙니다. 세로 방향 제곱 오차의 평균을 가장 작게 만드는 유일한 기울기와 절편입니다.",
+    hint: "점을 드래그하세요. 빈 곳을 클릭하면 점을 추가합니다(최대 24). 잔차는 세로입니다: ŷ − y.",
+    noise: "노이즈 σ",
+    seed: "시드",
+    intercept: "절편",
+    truth: "참 직선",
+    residuals: "잔차",
+    reset: "초기화",
+    outlier: "이상점 추가",
+    deletePoint: "선택 삭제",
+    status: "상태",
+    ok: "유일한 적합",
+    needSpread: "기울기가 유일하지 않습니다. x 방향으로 점을 벌리세요.",
+    needPoints: "점이 두 개 이상 필요합니다.",
+    aha: "가장 큰 잔차가 MSE의 40%를 넘습니다. 그 점을 직선 위로 끌어 보세요. MSE가 무너집니다.",
+  },
+  overfit: {
+    title: "과적합",
+    run: "차수 0–12 적합",
+    seed: "시드",
+    noise: "노이즈 σ",
+    degree: "차수 d",
+    train: "학습",
+    test: "테스트",
+    truth: "참 삼차식",
+    fit: "적합 곡선",
+    fitTitle: (d: number) => `차수 ${d} 적합`,
+    fitHint:
+      "차수를 3–5 너머로 끌어 보세요. 검은 곡선이 점선 삼차식에서 벗어나 파란 학습 점을 쫓습니다.",
+    plateau:
+      "전형적인 표본에서 테스트 오차 최솟값은 차수 3–5의 평탄 구간이며, 진짜 차수 하나만이 최적이라고 말할 수 없습니다.",
+    noSweet:
+      "이 표본은 깨끗한 최적 구간을 보여 주지 않습니다. 일부 시드에서는 정상이니 시드를 바꿔 보세요.",
+    uCurve:
+      "학습 오차는 내려가고 테스트 오차는 결국 올라갑니다. U자 곡선이지, 차수 3이 유일하게 최적이라는 증명은 아닙니다.",
+    best: (degree: number, cap: number) =>
+      `이 표본에서 참 함수 테스트 MSE가 가장 낮은 차수: ${degree} (선택 규칙 아님). 상한 ${cap}.`,
+  },
+  gen: {
+    title: "학습 / 검증 / 테스트",
+    guide:
+      "보라색 검증 곡선에서 차수를 고르세요. 빨간 테스트 곡선은 한 번만 보는 시험입니다. 복잡도를 고르려고 시험을 엿보면 낙관적인 점수가 나옵니다.",
+    seed: "시드",
+    noise: "노이즈 σ",
+    nTrain: "학습 n",
+    nValid: "검증 n",
+    nTest: "테스트 n",
+    honest: "정직한 선택 (검증 최소)",
+    peek: "엿보기 선택 (테스트 최소)",
+    aha: "테스트 최소화 차수가 시험 점수가 더 좋아 보이는 이유는 시험지로 공부했기 때문입니다. 검증 선택을 쓰세요.",
+    caption:
+      "60점 → 학습 60% / 검증 20% / 테스트 20%. 주 테스트 MSE는 여전히 참 삼차식 기준입니다.",
+    train: "학습 MSE",
+    valid: "검증 MSE",
+    test: "테스트 MSE vs f",
+    validPick: "검증 선택",
+    testPick: "테스트 엿보기",
+  },
+  cond: {
+    title: "조건수 (측정 κ)",
+    guide:
+      "이 숫자는 이 저장소의 arcsine 노드에서 잰 κ(X)입니다 — 특성 기둥이 얼마나 비슷한지. 솔브 가드로 쓰는 정규화 Gram 상한이 아닙니다.",
+    twoKappas:
+      "κ가 두 개입니다. 측정 κ(X)가 수업이고, gramSize/RIDGE+1 은 float64 자릿수가 부족한지만 가립니다.",
+    tableCaption: "측정 κ(X) vs 차수 (arcsine 노드)",
+    degree: "차수",
+    monomial: "단항",
+    chebyshev: "체비쇼프",
+    vsUniform: "체비쇼프+균등 ≈",
+    measured: "측정 κ(X)",
+    measuredDef:
+      "설계 행렬의 특이값 비. 체비쇼프+arcsine는 p가 n에 가까워질 때까지 거의 평탄합니다.",
+    guard: "솔브 가드 (학생용 κ 아님)",
+    guardDef: (example: string, ceiling: string) =>
+      `≤ m/RIDGE+1 (예: m=40에서 ≈ ${example}). d ≳ 78에서 ridge가 Gram을 약 ${ceiling} 으로 바닥냅니다.`,
+    monoChart: "단항 κ (로그) — 지수 성장",
+    chebChart: "체비쇼프 κ — 평탄하다 p→n",
+  },
+  act: {
+    title: "활성화 함수",
+    guide:
+      "깊은 연쇄는 층마다 φ′(z)와 가중치를 곱합니다. 인자가 작으면 열 층에서 거의 남지 않습니다. 시그모이드로 깊이를 올린 뒤 ReLU나 identity로 바꿔 보세요.",
+    activation: "활성화",
+    saturated: "포화",
+    sigmoidNote: "σ′ = 0.01 인 지점 z = ±log(99)",
+    chain: "너비 1 연쇄",
+    chainNote:
+      "살아 있는 점화식이 진실입니다. 시그모이드에서 |δ_L| ≤ (|w|/4)^L 은 상한이지, a₀ = 0, b = 0 에서의 측정값이 아닙니다.",
+    bound: "시그모이드 교과서 상한 |δ_L| ≤ (|w|/4)^L — 측정값이 아니라 상한으로만 표시합니다.",
+    exploded: "폭발",
+    dead: "죽은 ReLU",
+    deadNote:
+      "이 사이트에서 ReLU φ′(0) = 0입니다. 모든 z ≤ 0이면 이 배치에서 (w, b)에 대한 기울기는 정확히 0입니다.",
+    useLeaky: "leaky ReLU 사용 (완전히 죽지 않음)",
+    deadFrac: "죽은 비율",
+    allDead:
+      "이 배치에서 (w, b)에 대한 기울기는 정확히 0입니다. GD가 이 유닛을 되살릴 수 없습니다.",
+  },
+  bv: {
+    title: "편향과 분산",
+    guide:
+      "흐린 선 하나가 같은 삼차 과정에서 나온 다른 데이터입니다. 복잡도가 커지면 선들이 갈라집니다. 그 불일치가 분산입니다.",
+    notHoldout:
+      "막대는 참 삼차 함수와 격자 위 비교에 알려진 σ²를 더한 값입니다. 홀드아웃 테스트 MSE가 아닙니다.",
+    degree: "차수 d",
+    noise: "노이즈 σ",
+    seed: "시드",
+    run: "데이터셋 M개 다시 뽑기",
+    smallM: "M이 작아서 분산 막대 자체도 흔들립니다.",
+    bias2: "보정한 편향²",
+    variance: "분산 (M−1)",
+    direct: "직접 평균 (ĝ − f)²",
+    spaghetti: "적합 곡선 ([−4, 4]로 자름)",
+    bars: "차수별 보정 편향² + 분산 + σ² 누적",
+  },
+  ridge: {
+    title: "Ridge 경로",
+    guide:
+      "손잡이는 상대 ρ이지, 더 작은 차수가 아닙니다. 움직이면 울퉁불퉁한 차수 10 적합이 풀립니다. Ridge는 참 삼차식이 아니라 체비쇼프 원점으로 줄어듭니다.",
+    relative:
+      "학생 손잡이는 ρ(상대)입니다. 적용 λ = ρ · mean(diag G) — 교과서 절대 λ도, 평균 손실의 nλ도 아닙니다. 플래그십 엔진은 ρ = 10⁻⁸을 유지합니다.",
+    rhoLabel: "ρ (상대)",
+    lambdaLabel: "적용 λ",
+    degree: "차수 d",
+    noise: "노이즈 σ",
+    seed: "시드",
+    train: "학습 MSE",
+    test: "참 함수 테스트 MSE",
+    dip: "이 표본은 경로 안에 테스트 오차 골이 있습니다.",
+    noDip: "이 표본은 내부 골이 없습니다. 시드를 바꿔 보세요. 그것도 허용됩니다.",
+    axis: "가로축은 log₁₀ ρ이고, 오른쪽이 더 큰 ρ(더 강한 수축)입니다.",
+    shrinkNote: "Ridge는 참 삼차식 (0, 0.2, 0, 0.7)을 알지 못합니다.",
+    curve: "적합 vs 참 삼차식",
+    mse: "학습 MSE와 참 함수 테스트 MSE vs log₁₀ ρ",
+    coefs: "체비쇼프 계수 vs log₁₀ ρ",
+  },
+  bp: {
+    title: "연쇄 법칙 vs 유한차분",
+    guide:
+      "표본 하나, J = (σ(wx+b) − y)². 해석적 ∂J/∂w는 2(ŷ−y)σ′(z)x입니다. 중앙차분이 이와 같아야 합니다. 망을 학습시키는 것이 아닙니다.",
+    relW: "상대 오차 w",
+    relB: "상대 오차 b",
+    match: "해석적 기울기가 유한차분 검사와 맞습니다.",
+    mismatch: "두 도함수가 다릅니다. h를 더 작게 하거나, 꺾인 점에서 벗어나 보세요.",
+  },
   languageToggle: "English",
   hero: {
     eyebrow: "AI Research Lab",
@@ -160,13 +633,13 @@ const ko = {
   experiment: {
     title: "Double Descent 실험",
     description:
-      "설정을 바꾸고 실험을 실행한 뒤, 모델 복잡도가 증가할 때 학습·테스트 오차가 어떻게 변하는지 관찰하세요 — 보간 임계값 이후까지 포함합니다.",
+      "보간 근처에서 예상되는 분산 폭증을 관찰한 뒤 오차가 얼마나 회복되는지 확인해 보세요. 부분 회복, 경쟁력 있는 두 번째 하강, 스윕 범위 부족, 실제 수치 계산 실패를 구분해 보고합니다.",
     settings: "실험 설정",
     datasetSize: "데이터셋 크기",
     noiseLevel: "노이즈 수준",
     maxComplexity: "최대 모델 복잡도",
     trainTestSplit: "학습 / 테스트 분할",
-    splitHelp: "이 MVP에서는 80 / 20으로 고정됩니다.",
+    splitHelp: "분할을 조정할 수 있으며, 학습용 데이터는 최소 10개로 유지됩니다.",
     randomSeed: "랜덤 시드",
     run: "실험 실행",
     running: "실행 중…",
@@ -192,29 +665,37 @@ const ko = {
     datasetSize: "데이터셋 크기",
     noiseLevel: "노이즈 수준",
     randomSeed: "랜덤 시드",
-    bestTest: "최고 테스트 성능",
+    bestTest: "최저 참함수 테스트 MSE (선택 규칙 아님)",
     bestDegree: (d: number) => `차수 ${d}`,
     interpolationThreshold: "보간 임계값",
     degree: (d: number) => `차수 ${d}`,
     notReached: "도달하지 않음",
     minTrain: "최소 학습 오차",
-    minTest: "최소 테스트 오차",
+    minTest: "최소 테스트 MSE (참 함수 기준)",
+    minNoisyTest: "최소 테스트 MSE (노이즈 레이블 기준)",
     doubleDescent: "Double Descent 근거",
     beyondSweep:
       "예상 보간 임계값(학습 집합 크기 근처)이 이번 스윕의 최대 복잡도를 넘습니다. 임계값과 잠재적 double descent를 보려면 더 작은 데이터셋을 사용해 보세요.",
+    sweepRangeExhausted:
+      "스윕이 끝날 때에도 테스트 오차가 계속 감소했습니다. 결론을 내리기 전에 복잡도 범위를 더 확장하세요.",
+    testEstimateWarning:
+      "테스트 집합이 160개 미만이므로 이 판정의 신뢰도가 낮습니다. 보정 실험에서 작은 테스트 집합은 불안정한 판정을 만들었습니다.",
   },
   errorChart: {
     title: "모델 복잡도 vs 오차",
-    hint: "점을 클릭하면 해당 모델을 확인할 수 있습니다.",
+    hint: "점을 클릭하거나 차수 컨트롤로 해당 모델을 확인하세요.",
     selected: (d: number) => `선택됨: 차수 ${d}.`,
     empty: "실험 실행 후 모델 복잡도 대 오차 그래프가 표시됩니다.",
     log: "로그",
     linear: "선형",
+    scaleGroup: "Y축 스케일",
+    degreeSelect: "차수",
     xAxis: "모델 복잡도 (차수)",
     yAxisLog: "MSE (로그)",
     yAxis: "MSE",
     trainError: "학습 오차",
-    testError: "테스트 오차",
+    testError: "테스트 오차 (참 함수 기준)",
+    noisyTestError: "테스트 오차 (노이즈 레이블 기준)",
     interpolationThreshold: "보간 임계값",
     degree: (d: number | string) => `차수 ${d}`,
   },
@@ -224,7 +705,8 @@ const ko = {
     polynomialDegree: "다항식 차수",
     parameters: "파라미터 수",
     trainMSE: "학습 MSE",
-    testMSE: "테스트 MSE",
+    testMSE: "테스트 MSE (참 함수 기준)",
+    noisyTestMSE: "테스트 MSE (노이즈 레이블 기준)",
     generalizationGap: "일반화 격차",
     input: "입력 (x)",
     training: "학습",
@@ -240,17 +722,25 @@ const ko = {
     testDecreases:
       "가장 단순한 모델에서 복잡도가 증가하면 테스트 오차가 감소합니다. 모델이 기저 패턴을 맞출 만큼 유연해지고 있습니다.",
     threshold: (degree: number, mse?: string) =>
-      `학습 오차가 보간 임계값 아래로 처음 떨어지는 지점은 차수 ${degree} 근처입니다` +
+      `이론적 보간 임계값 p = n은 차수 ${degree}입니다` +
       (mse ? ` (학습 MSE ≈ ${mse})` : "") +
-      ". 이 복잡도에서 모델은 학습 집합을 거의 완벽히 맞출 수 있습니다.",
+      ". 표시된 학습 오차는 정규화된 적합이 학습 데이터를 얼마나 가깝게 보간하는지 보여 줍니다.",
     peakNearThreshold: (degree: number) =>
-      `보간 임계값 근처에서 학습 오차는 매우 낮지만 테스트 오차는 상승합니다(피크: 차수 ${degree} 근처). 이는 보간 임계값 주변에서 기대되는 동작과 일치합니다.`,
-    clearDoubleDescent:
-      "보간 구간 근처의 테스트 오차 피크 이후, 복잡도가 더 커지면 테스트 오차가 다시 감소합니다. 이번 실행에서는 double descent 패턴이 뚜렷하게 관찰됩니다.",
-    possibleDoubleDescent:
-      "테스트 오차 상승 이후 다시 감소하는 패턴이 보입니다. double descent를 시사할 수 있으나, 이번 실행만으로는 확정하기 어렵습니다.",
-    noDoubleDescent:
-      "고전적인 U자형 구간(또는 보간 피크) 이후 테스트 오차의 뚜렷한 두 번째 하강은 관찰되지 않았습니다. 이번 실행에서는 double descent를 주장하지 않습니다.",
+      `보간 임계값 근처의 차수 ${degree} 부근에서 테스트 오차가 피크를 보입니다. 이는 이론이 예측하는 실제 통계적 분산 폭증이며, 계산 실패를 뜻하지 않습니다.`,
+    trueDoubleDescent:
+      "보간 피크 이후 테스트 오차가 첫 번째 최적 구간의 최솟값보다 낮아졌습니다. 테스트 집합도 충분히 크므로 이번 실행은 실제 double descent를 보여 줍니다.",
+    competitiveSecondDescent:
+      "보간 피크 이후 테스트 오차가 첫 번째 최적 구간 최솟값의 2배 이내로 낮아졌습니다. 두 번째 하강은 경쟁력 있지만, 신뢰 가능한 실제 double descent 기준에는 이르지 못했습니다.",
+    partialRecovery:
+      "보간 피크 이후 테스트 오차가 크게 낮아졌지만 첫 번째 최적 구간 최솟값의 2배보다 높은 수준에 머물렀습니다. 이는 실제 부분 회복이며, 경쟁력 있는 double descent는 아닙니다.",
+    variancePeakWithoutRecovery:
+      "보간 근처에서 실제 분산 피크가 나타났지만, 완료된 스윕 안에서는 뚜렷한 두 번째 하강이 뒤따르지 않았습니다.",
+    numericalFailure:
+      "유한하지 않은 값이 발생했거나 조건수 상한상 float64의 의미 있는 정밀도가 너무 적게 남았습니다. 이는 통계적 분산이 아니라 실제 수치 계산 실패입니다.",
+    sweepRangeExhausted:
+      "테스트 오차가 계속 감소하는 도중 스윕이 끝났으므로, 끝점은 두 번째 최솟값이 아닙니다. Double descent 발생 여부를 판단하기 전에 복잡도 범위를 더 확장하세요.",
+    noSecondDescent:
+      "보간 피크에서 두 번째 하강으로 이어지는 뚜렷한 패턴이 관찰되지 않았습니다. 이번 실행에서는 double descent를 주장하지 않습니다.",
   },
   history: {
     title: "실험 기록",
@@ -280,15 +770,220 @@ const ko = {
   },
   footer: "AI Research Lab · 교육용 실험 플랫폼",
   verdicts: {
-    "Clear Double Descent": "뚜렷한 Double Descent",
-    "Possible Double Descent": "가능한 Double Descent",
-    "No Clear Double Descent": "뚜렷하지 않은 Double Descent",
+    "True Double Descent": "실제 Double Descent",
+    "Competitive Second Descent": "경쟁력 있는 두 번째 하강",
+    "Partial Recovery": "부분 회복",
+    "Variance Peak Without Recovery": "회복 없는 분산 피크",
+    "No Second Descent Observed": "두 번째 하강 관찰되지 않음",
+    "Sweep Range Exhausted": "스윕 범위 부족",
+    "Numerical Failure": "수치 계산 실패",
   } satisfies Record<DoubleDescentVerdict, string>,
 } as const;
 
 export type Messages = {
   siteName: string;
-  nav: { experiments: string; concepts: string; about: string };
+  skipToContent: string;
+  nav: {
+    home: string;
+    learn: string;
+    experiments: string;
+    concepts: string;
+    about: string;
+  };
+  course: {
+    start: string;
+    lab: string;
+    map: string;
+    progressOf: (done: number, total: number) => string;
+    lessonsCount: (done: number, total: number) => string;
+    upNext: string;
+    review: string;
+    startLesson: string;
+    coming: string;
+    prereq: string;
+    prereqMissing: string;
+    continueAnyway: string;
+    skipExperiment: string;
+    hasExperiment: string;
+    actFit: string;
+    actGeneralize: string;
+    actScale: string;
+    prev: string;
+    next: string;
+    experiment: string;
+    briefing: string;
+    conditioningLink: string;
+    conditioningTitle: string;
+    continue: string;
+    markDone: string;
+    done: string;
+    completed: string;
+    labsIndex: string;
+  };
+  quiz: {
+    check: string;
+    startReview: string;
+    questionOf: (n: number, total: number) => string;
+    correct: string;
+    wrong: string;
+    passed: string;
+    keepGoing: string;
+    score: (n: number, total: number) => string;
+    passedHint: string;
+    retryHint: string;
+    retry: string;
+    openLab: string;
+    closeLesson: string;
+  };
+  gd: {
+    title: string;
+    play: string;
+    pause: string;
+    step: string;
+    reset: string;
+    alpha: string;
+    scale: string;
+    w0: string;
+    b0: string;
+    iterations: string;
+    noise: string;
+    seed: string;
+    status: string;
+    monotonic: string;
+    oscillating: string;
+    diverging: string;
+    aha: string;
+    lossVsT: string;
+    logLoss: string;
+    linearLoss: string;
+  };
+  lr: {
+    title: string;
+    guide: string;
+    hint: string;
+    noise: string;
+    seed: string;
+    intercept: string;
+    truth: string;
+    residuals: string;
+    reset: string;
+    outlier: string;
+    deletePoint: string;
+    status: string;
+    ok: string;
+    needSpread: string;
+    needPoints: string;
+    aha: string;
+  };
+  overfit: {
+    title: string;
+    run: string;
+    seed: string;
+    noise: string;
+    degree: string;
+    train: string;
+    test: string;
+    truth: string;
+    fit: string;
+    fitTitle: (d: number) => string;
+    fitHint: string;
+    plateau: string;
+    noSweet: string;
+    uCurve: string;
+    best: (degree: number, cap: number) => string;
+  };
+  gen: {
+    title: string;
+    guide: string;
+    seed: string;
+    noise: string;
+    nTrain: string;
+    nValid: string;
+    nTest: string;
+    honest: string;
+    peek: string;
+    aha: string;
+    caption: string;
+    train: string;
+    valid: string;
+    test: string;
+    validPick: string;
+    testPick: string;
+  };
+  cond: {
+    title: string;
+    guide: string;
+    twoKappas: string;
+    tableCaption: string;
+    degree: string;
+    monomial: string;
+    chebyshev: string;
+    vsUniform: string;
+    measured: string;
+    measuredDef: string;
+    guard: string;
+    guardDef: (example: string, ceiling: string) => string;
+    monoChart: string;
+    chebChart: string;
+  };
+  act: {
+    title: string;
+    guide: string;
+    activation: string;
+    saturated: string;
+    sigmoidNote: string;
+    chain: string;
+    chainNote: string;
+    bound: string;
+    exploded: string;
+    dead: string;
+    deadNote: string;
+    useLeaky: string;
+    deadFrac: string;
+    allDead: string;
+  };
+  bp: {
+    title: string;
+    guide: string;
+    relW: string;
+    relB: string;
+    match: string;
+    mismatch: string;
+  };
+  bv: {
+    title: string;
+    guide: string;
+    notHoldout: string;
+    degree: string;
+    noise: string;
+    seed: string;
+    run: string;
+    smallM: string;
+    bias2: string;
+    variance: string;
+    direct: string;
+    spaghetti: string;
+    bars: string;
+  };
+  ridge: {
+    title: string;
+    guide: string;
+    relative: string;
+    rhoLabel: string;
+    lambdaLabel: string;
+    degree: string;
+    noise: string;
+    seed: string;
+    train: string;
+    test: string;
+    dip: string;
+    noDip: string;
+    axis: string;
+    shrinkNote: string;
+    curve: string;
+    mse: string;
+    coefs: string;
+  };
   languageToggle: string;
   hero: {
     eyebrow: string;
@@ -335,8 +1030,11 @@ export type Messages = {
     notReached: string;
     minTrain: string;
     minTest: string;
+    minNoisyTest: string;
     doubleDescent: string;
     beyondSweep: string;
+    sweepRangeExhausted: string;
+    testEstimateWarning: string;
   };
   errorChart: {
     title: string;
@@ -345,11 +1043,14 @@ export type Messages = {
     empty: string;
     log: string;
     linear: string;
+    scaleGroup: string;
+    degreeSelect: string;
     xAxis: string;
     yAxisLog: string;
     yAxis: string;
     trainError: string;
     testError: string;
+    noisyTestError: string;
     interpolationThreshold: string;
     degree: (d: number | string) => string;
   };
@@ -360,6 +1061,7 @@ export type Messages = {
     parameters: string;
     trainMSE: string;
     testMSE: string;
+    noisyTestMSE: string;
     generalizationGap: string;
     input: string;
     training: string;
@@ -374,9 +1076,13 @@ export type Messages = {
     testDecreases: string;
     threshold: (degree: number, mse?: string) => string;
     peakNearThreshold: (degree: number) => string;
-    clearDoubleDescent: string;
-    possibleDoubleDescent: string;
-    noDoubleDescent: string;
+    trueDoubleDescent: string;
+    competitiveSecondDescent: string;
+    partialRecovery: string;
+    variancePeakWithoutRecovery: string;
+    numericalFailure: string;
+    sweepRangeExhausted: string;
+    noSecondDescent: string;
   };
   history: {
     title: string;

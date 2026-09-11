@@ -6,13 +6,14 @@ import {
   type Locale,
   type Messages,
 } from "@/lib/i18n";
+import { otherLocale } from "@/lib/locales";
+import { usePathname, useRouter } from "next/navigation";
 import {
   createContext,
   useCallback,
   useContext,
   useEffect,
   useMemo,
-  useState,
 } from "react";
 
 interface LanguageContextValue {
@@ -24,42 +25,42 @@ interface LanguageContextValue {
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
-function readStoredLocale(): Locale {
-  if (typeof window === "undefined") return "en";
+function persistLocale(locale: Locale) {
   try {
-    const raw = window.localStorage.getItem(LOCALE_STORAGE_KEY);
-    return raw === "ko" ? "ko" : "en";
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, locale);
   } catch {
-    return "en";
+    /* ignore quota */
   }
+  document.cookie = `${LOCALE_STORAGE_KEY}=${locale};path=/;max-age=31536000;SameSite=Lax`;
 }
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>("en");
-  const [ready, setReady] = useState(false);
+export function LanguageProvider({
+  locale,
+  children,
+}: {
+  locale: Locale;
+  children: React.ReactNode;
+}) {
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    setLocaleState(readStoredLocale());
-    setReady(true);
-  }, []);
-
-  useEffect(() => {
-    if (!ready) return;
     document.documentElement.lang = locale === "ko" ? "ko" : "en";
-    try {
-      window.localStorage.setItem(LOCALE_STORAGE_KEY, locale);
-    } catch {
-      /* ignore quota errors */
-    }
-  }, [locale, ready]);
+    persistLocale(locale);
+  }, [locale]);
 
-  const setLocale = useCallback((next: Locale) => {
-    setLocaleState(next);
-  }, []);
+  const setLocale = useCallback(
+    (next: Locale) => {
+      persistLocale(next);
+      const replaced = pathname.replace(/^\/(en|ko)(?=\/|$)/, `/${next}`);
+      router.push(replaced === pathname ? `/${next}` : replaced);
+    },
+    [pathname, router],
+  );
 
   const toggleLocale = useCallback(() => {
-    setLocaleState((prev) => (prev === "en" ? "ko" : "en"));
-  }, []);
+    setLocale(otherLocale(locale));
+  }, [locale, setLocale]);
 
   const value = useMemo<LanguageContextValue>(
     () => ({

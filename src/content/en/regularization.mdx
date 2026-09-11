@@ -1,0 +1,37 @@
+## What is it?
+
+**Regularization** adds a penalty on complexity so the fit is not free to use every degree of freedom. The usual squared-weight penalty is ridge:
+
+$$
+\Psi(\boldsymbol{\theta})=\lVert X\boldsymbol{\theta}-y\rVert_2^2+\lambda\lVert\boldsymbol{\theta}\rVert_2^2,\qquad\lambda>0.
+$$
+
+Setting $\nabla\Psi=\mathbf{0}$ yields $(X^{\top}X+\lambda I)\boldsymbol{\theta}=X^{\top}y$.
+
+## Why it matters
+
+Overfitting is extra capacity memorizing noise. A penalty is one way to pay for that capacity. The lever can be $\lambda$, not a smaller degree.
+
+## Intuition
+
+Ridge pulls $\boldsymbol{\theta}$ toward the **origin in Chebyshev coordinates**. It does not know the true cubic $(0,0.2,0,0.7)$. Drag $\rho$ up and a wiggly degree-$10$ curve relaxes; train error rises while test error may dip, then both go to the zero-model floor.
+
+## Mathematics
+
+This lab uses **relative** ridge, the same units as the engine:
+
+$$
+\lambda=\rho\cdot\operatorname{mean}(\mathrm{diag}(X^{\top}X)).
+$$
+
+The double-descent solver keeps $\rho=\texttt{RIDGE}=10^{-8}$ so interpolation phenomenology survives. Here you move $\rho$ on a log scale. $\log_{10}\rho=0$ is $\rho=1$, not “off.” Larger $\rho$ is to the **right** (the opposite of some glmnet plots).
+
+We do **not** mix in an absolute $\lambda$ slider. That would be a different knob from the engine.
+
+## Experiment
+
+Freeze an overflexible polynomial (default degree $10$). The path is one primal solve per $\rho$ with $p\le n$. If this seed has no interior test-error dip, the note will say so.
+
+## Summary
+
+Regularization is a named penalty in **relative** units. The engine’s tiny $\rho$ is numerics; this page is the same formula with a student lever.

@@ -1,0 +1,19 @@
+# What is it?
+
+**Generalization** is error on $x$ the fitting routine did not get to use. Training MSE is the number you minimized. It is not the question.
+
+# Why it matters
+
+Every later chart on this site splits points into train and test. The split lives in `dataset.ts`: a seeded shuffle, then an 80/20 cut in the overfitting lab and a 40/460 cut in the flagship lab.
+
+# Intuition
+
+If you only look at training error, a model that memorizes noise looks perfect. The test points are the audit.
+
+# Mathematics
+
+Primary test MSE in the flagship lab is against the true $f$, not against noisy labels. Tiny test sets ($n_{\mathrm{test}}<160$) made double-descent verdicts lie in calibration. Overfitting’s U-curve uses only 10 test points, so a plateau is not a unique winner.
+
+# Summary
+
+Unseen error is the question. Training error is the tool that tried to answer a different one.

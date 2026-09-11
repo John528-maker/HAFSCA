@@ -1,6 +1,6 @@
 import type { ExperimentResult, HistoryEntry } from "../types/experiment.ts";
 
-const STORAGE_KEY = "ai-research-lab.history.v1";
+const STORAGE_KEY = "ai-research-lab.history.v2";
 const MAX_ENTRIES = 30;
 
 export function loadHistory(): HistoryEntry[] {

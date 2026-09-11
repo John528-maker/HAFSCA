@@ -1,0 +1,31 @@
+## What is it?
+
+**Optimization** is the problem $\min_{\boldsymbol{\theta}} J(\boldsymbol{\theta})$. A **critical point** satisfies $\nabla J=\mathbf{0}$. Every interior local minimizer of a differentiable $J$ is critical; the converse is false (maxima and saddles).
+
+MSE that is linear in $\boldsymbol{\theta}$ is **convex**: its Hessian $\frac{2}{n}X^{\top}X$ is positive semidefinite. For a differentiable convex function, every critical point is a global minimizer. Neural nets are in general **not** convex. This course does not train a net.
+
+## Why it matters
+
+Gradient descent and the normal equations are two **algorithms** for the same question: which $\boldsymbol{\theta}$ makes $J$ smallest? They are not different goals.
+
+## Intuition
+
+Calculus gives a test (gradient zero). Linear algebra, for this $J$, gives a formula. Gradient descent gives a procedure that still works when there is no formula.
+
+A bowl is the convex picture. A long valley is a large condition number of the Hessian: steps must be small along the steep axis. Stretching a feature in the GD lab is that valley.
+
+## Mathematics
+
+Set $\nabla J=\frac{2}{n}X^{\top}(X\boldsymbol{\theta}-y)=\mathbf{0}$. The factor $2/n$ cancels:
+
+$$
+X^{\top}X\,\boldsymbol{\theta}=X^{\top}y.
+$$
+
+If the columns of $X$ are independent ($p\le n$), there is a unique solution. If $p>n$, infinitely many interpolators exist and the engine picks minimum $\lVert\boldsymbol{\theta}\rVert_2$.
+
+Same one-parameter check: $5\theta-13=0$ gives $\theta^\star=2.6$.
+
+## Summary
+
+Optimization names the question. The next lesson writes the linear system; gradient descent already walked downhill without forming it.

@@ -49,16 +49,20 @@ export default function ModelExplorer({ dataset, selected }: Props) {
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
-      <h3 className="text-sm font-semibold uppercase tracking-wider text-muted">
+    <div className="card-3d p-5">
+      <h3 className="text-sm font-extrabold text-muted">
         {m.title}
       </h3>
 
-      <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
+      <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <Stat label={m.polynomialDegree} value={String(selected.degree)} />
         <Stat label={m.parameters} value={String(selected.paramCount)} />
         <Stat label={m.trainMSE} value={selected.trainMSE.toExponential(3)} />
         <Stat label={m.testMSE} value={selected.testMSE.toExponential(3)} />
+        <Stat
+          label={m.noisyTestMSE}
+          value={selected.noisyTestMSE.toExponential(3)}
+        />
         <Stat
           label={m.generalizationGap}
           value={selected.generalizationGap.toExponential(3)}
@@ -115,7 +119,7 @@ export default function ModelExplorer({ dataset, selected }: Props) {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border border-border bg-background px-3 py-2">
-      <dt className="text-[11px] uppercase tracking-wide text-muted">{label}</dt>
+      <dt className="text-[11px] font-extrabold text-muted">{label}</dt>
       <dd className="mt-0.5 font-mono text-sm">{value}</dd>
     </div>
   );

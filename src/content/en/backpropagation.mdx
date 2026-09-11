@@ -1,0 +1,27 @@
+## What is it?
+
+**Backpropagation** is the chain rule, applied from the output of a composed model back to its parameters, **reusing** intermediate derivatives so each layer is visited a constant number of times. It computes $\nabla J$. It is **not** the learning rule. Gradient descent *uses* that gradient.
+
+## Why it matters
+
+Without reuse, the number of paths through a deep composition explodes. Backprop is why a deep $J$ is differentiable in practice, not a new definition of loss.
+
+## Intuition
+
+The output was wrong by this much. Each earlier knob is blamed in proportion to how much it moved that error. If a sigmoid is saturated, $\varphi'\approx 0$ and the blame dies — exactly the 1-wide chain in the lab below.
+
+## Mathematics
+
+For the 1-unit chain already on this site,
+
+$$
+\delta_\ell=\varphi'(w a_{\ell-1}+b)\,w\,\delta_{\ell-1},\qquad \delta_0=1.
+$$
+
+$\delta_L=\partial a_L/\partial a_0$. A full net has one such product per edge, packed as matrix multiplies. We do **not** claim $\delta_L=(1/4)^L$ for a default sigmoid chain: activations move. The live recurrence is the truth; $\lvert\delta_L\rvert\le(\lvert w\rvert/4)^L$ is a bound.
+
+This MVP does **not** train a multilayer net. The first lab is a **one-sample check**: $J=(\sigma(wx+b)-y)^2$, analytic $\partial J/\partial w=2(\hat y-y)\sigma'(z)x$ against a central finite difference. Agreement is the test that backprop is the chain rule, not a different algorithm. The second lab is the same activations experiment: $\varphi$, $\varphi'$, vanishing $\delta$, dead ReLU.
+
+## Summary
+
+Backprop computes the gradient of a composition. Gradient descent is the step. Saturating $\varphi'$ is why deep sigmoids stall.

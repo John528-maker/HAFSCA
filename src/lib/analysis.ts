@@ -1,13 +1,34 @@
 import type { DoubleDescentVerdict, ModelResult } from "../types/experiment.ts";
 import { getMessages, type Locale } from "./i18n.ts";
 
-/** Tunable double-descent detection thresholds. */
+/** Calibrated double-descent detection thresholds. */
 export const DD_THRESHOLDS = {
+  /** Three points suppress isolated degree-grid jitter without erasing the peak. */
   SMOOTH_WINDOW: 3,
-  CLEAR_RISE: 1.5,
-  CLEAR_DROP: 0.7,
-  RISE: 1.2,
-  DROP: 0.85,
+  /**
+   * The wide-sweep measurements do not identify a statistical rise/drop
+   * cutoff. A factor of two is therefore an explicit visual-salience rule,
+   * not a fitted constant: the peak must double and then halve.
+   */
+  MIN_VISIBLE_RISE: 2,
+  MAX_VISIBLE_DROP: 0.5,
+  /**
+   * Task-1 calibration reports ratio<2 directly. This is the outer boundary
+   * of the same practical error regime; larger truth-target ratios were not
+   * considered a competitive return.
+   */
+  COMPETITIVE_SECOND_MIN: 2,
+  /**
+   * Standard forward-error analysis bounds relative solve error by κ·ε.
+   * At 1e-2, fewer than about two decimal digits remain trustworthy, which is
+   * the numerical-failure boundary. Large MSE alone is never a failure signal.
+   */
+  MAX_FORWARD_ERROR_BOUND: 1e-2,
+  /**
+   * With 10 test points, 22/24 seeds received a DD verdict; at 160 points that
+   * fell to 8/24. Below 160, a single run is too noisy for a True verdict.
+   */
+  MIN_RELIABLE_TEST_SIZE: 160,
 } as const;
 
 export function findInterpolationThreshold(
@@ -43,20 +64,61 @@ interface CurvePoint {
 
 /**
  * Detect the classical U → peak → second descent pattern on the test-error curve.
- * Returns one of three honest verdicts; never claims DD when the curve doesn't show it.
+ * Detection uses truth-target test MSE. This matches the 24-seed calibration,
+ * removes the additive noise-variance pedestal, and measures recovery toward f.
  */
-export function analyzeDoubleDescent(results: ModelResult[]): DoubleDescentVerdict {
-  if (results.length < 8) return "No Clear Double Descent";
+export function analyzeDoubleDescent(
+  results: ModelResult[],
+  testSize = Number.POSITIVE_INFINITY,
+  interpolationDegree?: number,
+): DoubleDescentVerdict {
+  if (results.length < 8) return "No Second Descent Observed";
 
   const raw = results.map((r) => r.testMSE);
+  const hasNonFinite = results.some(
+    (result) =>
+      !Number.isFinite(result.trainMSE) ||
+      !Number.isFinite(result.testMSE) ||
+      !Number.isFinite(result.noisyTestMSE) ||
+      !Number.isFinite(result.conditionNumberUpperBound) ||
+      result.coefficients.some((value) => !Number.isFinite(value)),
+  );
+  const hasInsufficientPrecision = results.some(
+    (result) =>
+      result.conditionNumberUpperBound * Number.EPSILON >=
+      DD_THRESHOLDS.MAX_FORWARD_ERROR_BOUND,
+  );
+  if (hasNonFinite || hasInsufficientPrecision) {
+    return "Numerical Failure";
+  }
   const smoothed = smooth(raw, DD_THRESHOLDS.SMOOTH_WINDOW);
 
-  // 1. First local minimum (classical sweet spot).
+  // 1. Classical sweet spot: the best point before known interpolation.
   let firstMin: CurvePoint | null = null;
-  for (let i = 1; i < smoothed.length - 1; i++) {
-    if (smoothed[i]! <= smoothed[i - 1]! && smoothed[i]! <= smoothed[i + 1]!) {
-      firstMin = { index: i, degree: results[i]!.degree, value: smoothed[i]! };
-      break;
+  if (interpolationDegree !== undefined) {
+    for (let i = 0; i < smoothed.length; i++) {
+      if (results[i]!.degree >= interpolationDegree) break;
+      if (!firstMin || smoothed[i]! < firstMin.value) {
+        firstMin = {
+          index: i,
+          degree: results[i]!.degree,
+          value: smoothed[i]!,
+        };
+      }
+    }
+  } else {
+    for (let i = 1; i < smoothed.length - 1; i++) {
+      if (
+        smoothed[i]! <= smoothed[i - 1]! &&
+        smoothed[i]! <= smoothed[i + 1]!
+      ) {
+        firstMin = {
+          index: i,
+          degree: results[i]!.degree,
+          value: smoothed[i]!,
+        };
+        break;
+      }
     }
   }
   if (!firstMin) {
@@ -88,7 +150,10 @@ export function analyzeDoubleDescent(results: ModelResult[]): DoubleDescentVerdi
       peak = { index: best, degree: results[best]!.degree, value: smoothed[best]! };
     }
   }
-  if (!peak || peak.value <= firstMin.value) return "No Clear Double Descent";
+  if (!peak || peak.value <= firstMin.value) return "No Second Descent Observed";
+  const rise = peak.value / Math.max(firstMin.value, 1e-12);
+  const hasVisibleRise = rise >= DD_THRESHOLDS.MIN_VISIBLE_RISE;
+  if (!hasVisibleRise) return "No Second Descent Observed";
 
   // 3. Subsequent minimum after the peak.
   let secondMin: CurvePoint | null = null;
@@ -107,24 +172,45 @@ export function analyzeDoubleDescent(results: ModelResult[]): DoubleDescentVerdi
     }
     secondMin = { index: best, degree: results[best]!.degree, value: smoothed[best]! };
   }
-  if (!secondMin || secondMin.value >= peak.value) return "No Clear Double Descent";
+  if (!secondMin || secondMin.value >= peak.value) {
+    return "Variance Peak Without Recovery";
+  }
 
-  const rise = peak.value / Math.max(firstMin.value, 1e-12);
   const dropRatio = secondMin.value / peak.value;
+  const secondMinRatio =
+    secondMin.value / Math.max(firstMin.value, 1e-12);
+  const isCompetitive =
+    secondMinRatio <= DD_THRESHOLDS.COMPETITIVE_SECOND_MIN;
+  const hasVisibleShape =
+    rise >= DD_THRESHOLDS.MIN_VISIBLE_RISE &&
+    dropRatio <= DD_THRESHOLDS.MAX_VISIBLE_DROP;
+
+  let lowestPostPeakIndex = peak.index + 1;
+  for (let i = peak.index + 1; i < smoothed.length; i++) {
+    if (smoothed[i]! < smoothed[lowestPostPeakIndex]!) lowestPostPeakIndex = i;
+  }
+  if (
+    lowestPostPeakIndex === smoothed.length - 1 &&
+    smoothed[lowestPostPeakIndex]! < smoothed[lowestPostPeakIndex - 1]!
+  ) {
+    return "Sweep Range Exhausted";
+  }
 
   if (
-    rise >= DD_THRESHOLDS.CLEAR_RISE &&
-    dropRatio <= DD_THRESHOLDS.CLEAR_DROP &&
-    secondMin.value < firstMin.value
+    hasVisibleShape &&
+    secondMin.value < firstMin.value &&
+    testSize >= DD_THRESHOLDS.MIN_RELIABLE_TEST_SIZE
   ) {
-    return "Clear Double Descent";
+    return "True Double Descent";
   }
 
-  if (rise >= DD_THRESHOLDS.RISE && dropRatio <= DD_THRESHOLDS.DROP) {
-    return "Possible Double Descent";
+  if (hasVisibleShape && isCompetitive) {
+    return "Competitive Second Descent";
   }
 
-  return "No Clear Double Descent";
+  if (hasVisibleShape) return "Partial Recovery";
+
+  return "Variance Peak Without Recovery";
 }
 
 /**
@@ -176,12 +262,20 @@ export function buildAnalysisNotes(
     }
   }
 
-  if (verdict === "Clear Double Descent") {
-    notes.push(a.clearDoubleDescent);
-  } else if (verdict === "Possible Double Descent") {
-    notes.push(a.possibleDoubleDescent);
+  if (verdict === "True Double Descent") {
+    notes.push(a.trueDoubleDescent);
+  } else if (verdict === "Competitive Second Descent") {
+    notes.push(a.competitiveSecondDescent);
+  } else if (verdict === "Partial Recovery") {
+    notes.push(a.partialRecovery);
+  } else if (verdict === "Variance Peak Without Recovery") {
+    notes.push(a.variancePeakWithoutRecovery);
+  } else if (verdict === "Numerical Failure") {
+    notes.push(a.numericalFailure);
+  } else if (verdict === "Sweep Range Exhausted") {
+    notes.push(a.sweepRangeExhausted);
   } else {
-    notes.push(a.noDoubleDescent);
+    notes.push(a.noSecondDescent);
   }
 
   return notes;
