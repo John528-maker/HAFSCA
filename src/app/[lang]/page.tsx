@@ -1,5 +1,6 @@
 import LearningPathCards from "@/components/LearningPathCards";
 import LobbyPrimaryCta from "@/components/LobbyPrimaryCta";
+import NextTaskCard from "@/components/NextTaskCard";
 import Pressable from "@/components/Pressable";
 import { isCourseLocale, type CourseLocale } from "@/lib/locales";
 import { getMessages } from "@/lib/i18n";
@@ -32,6 +33,7 @@ export default async function LobbyPage({
           {t.course.map}
         </Pressable>
       </div>
+      <NextTaskCard lang={locale} />
       <LearningPathCards lang={locale} />
     </main>
   );

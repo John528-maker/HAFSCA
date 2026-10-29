@@ -22,6 +22,8 @@ const en = {
     lessonsCount: (done: number, total: number) =>
       `${done} of ${total} lessons`,
     upNext: "Up next",
+    nextTask: "Next up",
+    nextTaskDone: "Every lesson on this path is done.",
     review: "Review",
     startLesson: "Start",
     coming: "This lesson is not published yet.",
@@ -410,6 +412,8 @@ const ko = {
     lessonsCount: (done: number, total: number) =>
       `${total}개 중 ${done}개 완료`,
     upNext: "다음 수업",
+    nextTask: "다음 할 일",
+    nextTaskDone: "이 경로의 수업을 모두 마쳤습니다.",
     review: "복습",
     startLesson: "시작",
     coming: "이 수업은 아직 공개되지 않았습니다.",
@@ -797,6 +801,8 @@ export type Messages = {
     progressOf: (done: number, total: number) => string;
     lessonsCount: (done: number, total: number) => string;
     upNext: string;
+    nextTask: string;
+    nextTaskDone: string;
     review: string;
     startLesson: string;
     coming: string;

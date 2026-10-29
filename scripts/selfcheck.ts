@@ -64,8 +64,15 @@ import {
   runBackpropCheck,
 } from "../src/lib/backpropCheck.ts";
 import { parseProgress } from "../src/lib/progress.ts";
+import { existsSync } from "node:fs";
 import { assertQuizBank } from "../src/lib/quiz.ts";
 import { QUIZZES } from "../src/content/quizzes.ts";
+import { LOCALES } from "../src/lib/locales.ts";
+import { getMessages } from "../src/lib/i18n.ts";
+import {
+  assertLessonLinks,
+  nextIncompleteSlug,
+} from "../src/curriculum/lessonLinks.ts";
 import {
   RIDGE_DEFAULTS,
   RIDGE_RHO_ENGINE,
@@ -754,6 +761,45 @@ console.log("20. Backprop finite-difference check + progress parser");
     publishedLessons().map((lesson) => lesson.slug),
   );
   assert(quizErrors.length === 0, quizErrors.join("; ") || "quiz bank covers every published lesson");
+
+  const linkErrors = assertLessonLinks(
+    LESSONS.map((lesson) => lesson.slug),
+    QUIZZES,
+  );
+  assert(
+    linkErrors.length === 0,
+    linkErrors.join("; ") || "every lesson is linked in both languages",
+  );
+  for (const locale of LOCALES) {
+    const messages = getMessages(locale);
+    assert(messages.course.nextTask.trim().length > 0, `${locale} next-task label`);
+    assert(
+      messages.course.nextTaskDone.trim().length > 0,
+      `${locale} next-task done label`,
+    );
+    assert(messages.quiz.openLab.trim().length > 0, `${locale} lab button`);
+    assert(messages.quiz.startReview.trim().length > 0, `${locale} quiz button`);
+    for (const lesson of publishedLessons()) {
+      const file = `src/content/${locale}/${lesson.slug}.mdx`;
+      assert(existsSync(file), `${file} exists for the lesson link`);
+    }
+  }
+  assert(
+    nextIncompleteSlug(["a", "b", "c"], []) === "a",
+    "next task starts at the first lesson",
+  );
+  assert(
+    nextIncompleteSlug(["a", "b", "c"], ["a"]) === "b",
+    "next task skips a completed lesson",
+  );
+  assert(
+    nextIncompleteSlug(["a", "b", "c"], ["b"]) === "a",
+    "next task is the first unfinished lesson in order",
+  );
+  assert(
+    nextIncompleteSlug(["a", "b", "c"], ["a", "b", "c"]) === null,
+    "a finished path has no next task",
+  );
 }
 
 console.log(`\n${passed} passed, ${failed} failed`);

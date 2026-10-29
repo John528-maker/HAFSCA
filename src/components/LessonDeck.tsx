@@ -8,6 +8,7 @@ import {
   lessonPath,
   LESSONS,
 } from "@/curriculum/curriculum";
+import { LESSON_LAB, labHref } from "@/curriculum/lessonLinks";
 import { pathNeighbors } from "@/curriculum/paths";
 import { CURRICULUM_VERSION } from "@/curriculum/version";
 import { isCourseLocale, type CourseLocale } from "@/lib/locales";
@@ -167,6 +168,11 @@ export default function LessonDeck({ children }: { children: ReactNode }) {
 
   const qz = t.quiz;
   const perfect = correctCount === questions.length;
+  const lab = labHref(lang, slug);
+  const host = LESSON_LAB[slug];
+  const crossTitle =
+    host && host !== slug ? getLesson(host)?.title[lang] : undefined;
+  const labLabel = crossTitle ? `${qz.openLab}: ${crossTitle}` : qz.openLab;
 
   return (
     <div className="lesson-player">
@@ -270,12 +276,22 @@ export default function LessonDeck({ children }: { children: ReactNode }) {
       )}
 
       <div className="lesson-footer">
-        {reading && (
+        {reading && step < sections.length - 1 && (
           <Pressable className="w-full" onClick={goNext}>
-            {step === sections.length - 1 && questions.length > 0
-              ? qz.startReview
-              : t.course.continue}
+            {t.course.continue}
           </Pressable>
+        )}
+        {reading && step === sections.length - 1 && (
+          <div className="flex w-full flex-col gap-3 sm:flex-row">
+            <Pressable className="w-full" onClick={goNext}>
+              {questions.length > 0 ? qz.startReview : t.course.continue}
+            </Pressable>
+            {lab && (
+              <Pressable href={lab} variant="secondary" className="w-full">
+                {labLabel}
+              </Pressable>
+            )}
+          </div>
         )}
         {inQuiz && !checked && (
           <Pressable className="w-full" disabled={picked === null} onClick={check}>
@@ -289,7 +305,7 @@ export default function LessonDeck({ children }: { children: ReactNode }) {
         )}
         {done && (
           <div className="flex w-full flex-col gap-3 sm:flex-row">
-            {!perfect && (
+            {questions.length > 0 && (
               <Pressable
                 className="w-full"
                 variant="secondary"
@@ -300,16 +316,16 @@ export default function LessonDeck({ children }: { children: ReactNode }) {
                   setCorrectCount(0);
                 }}
               >
-                {qz.retry}
+                {perfect ? qz.startReview : qz.retry}
               </Pressable>
             )}
-            {lesson?.experimentId && (
+            {lab && (
               <Pressable
-                href="#experiment"
+                href={lab}
                 variant={perfect ? "secondary" : "primary"}
                 className="w-full"
               >
-                {qz.openLab}
+                {labLabel}
               </Pressable>
             )}
             {next && (
